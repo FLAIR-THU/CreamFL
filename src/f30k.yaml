@@ -1,0 +1,59 @@
+dataloader:
+  batch_size: 128
+  eval_batch_size: 8
+  num_workers: 16
+  crop_size: 224
+  word_dim: 300
+  random_erasing_prob: 0.2
+  caption_drop_prob: 0.1
+
+model:
+  name: pcme
+  embed_dim: 512  # origin 2048
+  cnn_type: resnet18
+  wemb_type: glove
+  word_dim: 300
+  cache_dir: /data/mmdata/log/MM-f30k
+  n_samples_inference: 7
+  eval_method: matmul
+  use_img_client: False
+  use_txt_client: False
+  use_mm_client: False
+  client: 0.1
+  momentum: 0.9
+
+# optimizer configuration
+optimizer:
+  name: adamp
+  learning_rate: 0.0002
+  weight_decay: 0.0
+
+# lr scheduler configuration
+lr_scheduler:
+  name: cosine_annealing
+  T_max: 30
+
+# criterion configuration
+criterion:
+  name: pcme
+  init_negative_scale: 15
+  init_shift: 15
+  num_samples: 7
+  vib_beta: 0
+  criterion__negative_sampling_ratio: -1
+
+# detailed training configuration
+train:
+  is_client: True
+  server_dataset: Coco
+  model_save_path: model_
+  best_model_save_path: model_best.pth
+  pretrain_epochs: 0
+  finetune_epochs: 30
+  finetune_lr_decay: 0.1
+  log_step: 1000
+  grad_clip: 2
+  val_epochs: 10
+  pretrain_val_epochs: 10
+  use_fp16: True
+  output_file: model.log
