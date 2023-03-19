@@ -315,7 +315,7 @@ def prepare_coco_dataloaders(dataloader_config,
     return dataloaders, vocab
 
 
-def see_coco_len(dataset_root=os.environ['HOME'] + '/data/mmdata/MSCOCO/2014/image-based'):
+def see_coco_len(dataset_root=os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'):
     """Prepare MS-COCO Caption train / val / test dataloaders
     Args:
         dataloader_config (dict): configuration file which should contain "batch_size"

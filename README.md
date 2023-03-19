@@ -8,11 +8,15 @@ This repo contains a PyTorch implementation of the paper [Multimodal Federated L
 
 ## Setup
 
-The required packages are listed in `requirements.txt` .
+### Environment
+
+The required packages of the environment we used to conduct experiments are listed in `requirements.txt`.
+
+Please note that you should install `apex` by following the instructions from https://github.com/NVIDIA/apex#installation, instead of directly running `pip install apex`.
 
 ### Datasets
 
-For datasets, please first download the MSCOCO, CIFAR-10, CIFAR-100, and AG_NEWS datasets, and then arrange their directories as follows (create an empty directory for `yClient`):
+For datasets, please download the MSCOCO, Flicker30K, CIFAR-100, and AG_NEWS datasets, and arrange their directories as follows:
 
 ```
 os.environ['HOME'] + 'data/'
@@ -22,37 +26,35 @@ os.environ['HOME'] + 'data/'
 ├── flickr30k
 │   └── flickr30k-images
 ├── mmdata
-│   ├── Flick30k
-│   │   ├── arrow
-│   │   ├── data
-│   │   │   ├── coco_precomp
-│   │   │   └── f30k_precomp
-│   │   ├── flickr30k-images
-│   │   └── karpathy
-│   ├── log
-│   │   └── server
 │   ├── MSCOCO
 │   │   └── 2014
-│   │       └── image-based
-│   │           ├── allimages
-│   │           ├── annotations
-│   │           ├── arrow
-│   │           ├── karpathy
-│   │           └── val2014
-└── yClient
-    ├── AG_NEWS-1
-    └── Cifar100
+│   │       ├── allimages
+│   │       ├── annotations
+│   │       ├── train2014
+│   │       └── val2014
 ```
 
 ## Usage
 
-Shell command for reproducing CreamFL with BERT and ResNet101 as server models:
+To reproduce CreamFL with BERT and ResNet101 as server models, run the following shell command:
 
 ```shell
-# CreamFL
 python src/main.py --name CreamFL --server_lr 1e-5 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5
 ```
 
-## Acknowledgement
+## Citation
 
-Thanks for the code from [PCME](https://github.com/naver-ai/pcme) and [MOON](https://github.com/QinbinLi/MOON) repos.
+If you find the paper provides some insights into multimodal FL or our code useful, please consider citing:
+
+```
+@article{yu2023multimodal,
+  title={Multimodal Federated Learning via Contrastive Representation Ensemble},
+  author={Yu, Qiying and Liu, Yang and Wang, Yimu and Xu, Ke and Liu, Jingjing},
+  journal={arXiv preprint arXiv:2302.08888},
+  year={2023}
+}
+```
+
+## Acknowledgements
+
+We would like to thank for the code from [PCME](https://github.com/naver-ai/pcme) and [MOON](https://github.com/QinbinLi/MOON) repositories.

@@ -152,8 +152,8 @@ class CocoCaptionsCap(Dataset):
 
 
 class CocoImageRetrieval(datasets.coco.CocoDetection):
-    def __init__(self, root=os.environ['HOME'] + "/data/mmdata/MSCOCO/2014/image-based/train2014",
-                 annFile=os.environ['HOME'] + "/data/mmdata/MSCOCO/2014/image-based/annotations/instances_train2014.json",
+    def __init__(self, root=os.environ['HOME'] + "/data/mmdata/MSCOCO/2014/train2014",
+                 annFile=os.environ['HOME'] + "/data/mmdata/MSCOCO/2014/annotations/instances_train2014.json",
                  transform=None, target_transform=None):
         self.root = root
         self.coco = COCO(annFile)
@@ -194,9 +194,9 @@ class CocoImageRetrieval(datasets.coco.CocoDetection):
 
 
 class CocoTextRetrieval(Dataset):
-    def __init__(self, root=os.environ['HOME'] + "/data/mmdata/MSCOCO/2014/image-based/train2014",
-                 annFile=os.environ['HOME'] + "/data/mmdata/MSCOCO/2014/image-based/annotations/captions_train2014.json",
-                 insFile=os.environ['HOME'] + '/data/mmdata/MSCOCO/2014/image-based/annotations/instances_train2014.json',
+    def __init__(self, root=os.environ['HOME'] + "/data/mmdata/MSCOCO/2014/train2014",
+                 annFile=os.environ['HOME'] + "/data/mmdata/MSCOCO/2014/annotations/captions_train2014.json",
+                 insFile=os.environ['HOME'] + '/data/mmdata/MSCOCO/2014/annotations/instances_train2014.json',
                  transform=None, target_transform=None):
         self.root = os.path.expanduser(root)
         self.coco = COCO(annFile)

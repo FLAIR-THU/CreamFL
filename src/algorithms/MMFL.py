@@ -88,7 +88,7 @@ class MMFL(object):
             self.config.model.cnn_type = 'resnet101'
 
     def load_dataset(self, args):
-        dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014/image-based'
+        dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
         vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
         self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, vocab_path)
 
@@ -116,6 +116,8 @@ class MMFL(object):
     def create_model(self, args):
         self.logger.log('start creating model and partition datasets')
         self.device = torch.device("cuda:%d" % args.device)
+
+        os.makedirs(os.environ['HOME'] + f'/data/yClient', exist_ok=True)
 
         # Create Client Models
         self.img_local_trainers, self.txt_local_trainers, self.mm_local_trainers = [], [], []

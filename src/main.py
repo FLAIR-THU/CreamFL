@@ -39,7 +39,7 @@ def args():
     parser.add_argument('--name', type=str, default='Test', help='The name for different experimental runs.')
     parser.add_argument('--exp_dir', type=str, default='./experiments/',
                         help='Locations to save different experimental runs.')
-    parser.add_argument('--local_epochs', type=int, default=5)
+    parser.add_argument('--local_epochs', type=int, default=1)
     parser.add_argument('--comm_rounds', type=int, default=30)
 
     parser.add_argument('--model', type=str, default='resnet34', help='Target model name (default: resnet34_8x)')
@@ -51,11 +51,11 @@ def args():
                         help='random seed (default: 1)')
     parser.add_argument('--device', type=int, default=0)
 
-    parser.add_argument('--num_img_clients', type=int, default=10)
-    parser.add_argument('--num_txt_clients', type=int, default=10)
-    parser.add_argument('--num_mm_clients', type=int, default=15)
+    parser.add_argument('--num_img_clients', type=int, default=1)
+    parser.add_argument('--num_txt_clients', type=int, default=1)
+    parser.add_argument('--num_mm_clients', type=int, default=1)
 
-    parser.add_argument('--client_num_per_round', type=int, default=10)
+    parser.add_argument('--client_num_per_round', type=int, default=3)
 
     # === dataloader ===
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['svhn', 'cifar10', 'cifar100'],

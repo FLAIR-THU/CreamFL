@@ -120,7 +120,7 @@ class EngineBase(object):
             self.train_loader = dataloaders['train']
             self.val_loader = dataloaders['te']
         elif dset_name == "coco":
-            dataloaders, vocab = prepare_coco_dataloaders(self.config.dataloader, os.environ['HOME'] + '/data/mmdata/MSCOCO/2014/image-based', vocab_path, client=client)
+            dataloaders, vocab = prepare_coco_dataloaders(self.config.dataloader, os.environ['HOME'] + '/data/mmdata/MSCOCO/2014', vocab_path, client=client)
             self.train_loader = dataloaders['train_client']
             self.val_loader = dataloaders['test']
         else:
