@@ -44,7 +44,7 @@ python src/main.py --name CreamFL --server_lr 1e-5 --agg_method con_w --contrast
 
 ## Citation
 
-If you find the paper provides some insights into multimodal FL or our code useful, please consider citing:
+If you find the paper provides some insights into multimodal FL or our code useful 🤗, please consider citing:
 
 ```
 @article{yu2023multimodal,
