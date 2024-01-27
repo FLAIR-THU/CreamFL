@@ -1,0 +1,4 @@
+wsl
+__pycache__
+wandb/
+*.log

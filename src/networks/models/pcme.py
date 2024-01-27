@@ -28,8 +28,8 @@ class PCME(nn.Module):
         if config.not_bert:
             self.txt_enc = EncoderText(word2idx, config, mlp_local)
         else:
-            self.txt_enc = BertModel.from_pretrained("bert-base-uncased")
-            self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+            self.txt_enc = BertModel.from_pretrained("bert-base-uncased", resume_download=True)
+            self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", resume_download=True)
             self.linear = nn.Linear(768, self.embed_dim)
 
     def forward(self, images, sentences, captions_word, lengths):

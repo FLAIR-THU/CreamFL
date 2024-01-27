@@ -1,3 +1,20 @@
+
+Tasks:
+
+* get code base running locally.
+
+Goals:
+
+* Learn:
+  * Multimodal
+  * Federated Learning
+
+* Implement networking
+
+
+------------------------
+Begin original readme
+
 # Multimodal Federated Learning via Contrastive Representation Ensemble
 
 This repo contains a PyTorch implementation of the paper [Multimodal Federated Learning via Contrastive Representation Ensemble](https://arxiv.org/abs/2302.08888) (ICLR 2023). 
