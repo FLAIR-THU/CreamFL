@@ -42,27 +42,26 @@ def args():
     parser.add_argument('--local_epochs', type=int, default=5)
     parser.add_argument('--comm_rounds', type=int, default=30)
 
-    parser.add_argument('--model', type=str, default='resnet34', help='Target model name (default: resnet34_8x)')
+    parser.add_argument('--model', type=str, default='resnet18', help='Target model name')
     parser.add_argument('--img_model_local', type=str, default='resnet10')
     parser.add_argument('--pretrained', type=int, default=0)
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
-    parser.add_argument('--seed', type=int, default=random.randint(0, 100000), metavar='S',
+    parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
     parser.add_argument('--device', type=int, default=0)
-
-    parser.add_argument('--num_img_clients', type=int, default=10)
-    parser.add_argument('--num_txt_clients', type=int, default=10)
-    parser.add_argument('--num_mm_clients', type=int, default=15)
+    parser.add_argument('--num_img_clients', type=int, default=2)
+    parser.add_argument('--num_txt_clients', type=int, default=2)
+    parser.add_argument('--num_mm_clients', type=int, default=3)
 
     parser.add_argument('--client_num_per_round', type=int, default=10)
 
     # === dataloader ===
-    parser.add_argument('--dataset', type=str, default='cifar100', choices=['svhn', 'cifar10', 'cifar100'],
+    parser.add_argument('--dataset', type=str, default='cifar10', choices=['svhn', 'cifar10', 'cifar100'],
                         help='dataset name (default: cifar10)')
     parser.add_argument('--data_root', type=str, default=os.environ['HOME'] + "/data/")
     parser.add_argument('--batch_size', type=int, default=64, metavar='N',
-                        help='input batch size for training (default: 256)')
+                        help='input batch size for training (default: 64)')
     parser.add_argument('--alpha', type=float, default=0.5)
 
     # === optimization ===

@@ -1,5 +1,7 @@
 transformers>=4.37.1
 portalocker>=2.0.0
+wheel>=0.42.0
+fire>=0.5.0
 adamp>=0.3.0
 apex==0.1
 matplotlib>=3.5.0

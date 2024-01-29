@@ -1,4 +1,5 @@
-wsl
+wsl/
+a7env/
 __pycache__
 wandb/
 *.log
