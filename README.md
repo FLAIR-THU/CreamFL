@@ -2,6 +2,8 @@
 Tasks:
 
 * get code base running locally.
+  [x] changed default args to use less memory
+  [x] python src/main.py --name CreamFL --server_lr 1e-5 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --not_bert
 
 Goals:
 

@@ -1,7 +1,7 @@
 dataloader:
-  batch_size: 128
+  batch_size: 32
   eval_batch_size: 8
-  num_workers: 16
+  num_workers: 2
   crop_size: 224
   word_dim: 300
   random_erasing_prob: 0.2
@@ -49,11 +49,11 @@ train:
   model_save_path: model_
   best_model_save_path: model_best.pth
   pretrain_epochs: 0
-  finetune_epochs: 30
+  finetune_epochs: 15
   finetune_lr_decay: 0.1
   log_step: 1000
   grad_clip: 2
-  val_epochs: 10
-  pretrain_val_epochs: 10
+  val_epochs: 5
+  pretrain_val_epochs: 5
   use_fp16: True
   output_file: model.log
