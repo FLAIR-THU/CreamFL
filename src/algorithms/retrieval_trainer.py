@@ -224,8 +224,11 @@ class TrainerEngine(EngineBase):
         if 'lr' in metadata:
             report_dict['{}lr'.format(prefix)] = metadata['lr']
 
-        report_dict[
-            'summary'] = f"{report_dict['__test__n_fold_i2t_recall_1']}, {report_dict['__test__n_fold_i2t_recall_5']}, {report_dict['__test__n_fold_i2t_recall_10']}, {report_dict['__test__n_fold_t2i_recall_1']}, {report_dict['__test__n_fold_t2i_recall_5']}, {report_dict['__test__n_fold_t2i_recall_10']}, {report_dict['__test__i2t_recall_1']}, {report_dict['__test__i2t_recall_5']}, {report_dict['__test__i2t_recall_10']}, {report_dict['__test__t2i_recall_1']}, {report_dict['__test__t2i_recall_5']}, {report_dict['__test__t2i_recall_10']}"
+        # print all keys of report_dict
+        print(report_dict.keys())
+
+
+        #report_dict['summary'] = f"{report_dict['__test__n_fold_i2t_recall_1']}, {report_dict['__test__n_fold_i2t_recall_5']}, {report_dict['__test__n_fold_i2t_recall_10']}, {report_dict['__test__n_fold_t2i_recall_1']}, {report_dict['__test__n_fold_t2i_recall_5']}, {report_dict['__test__n_fold_t2i_recall_10']}, {report_dict['__test__i2t_recall_1']}, {report_dict['__test__i2t_recall_5']}, {report_dict['__test__i2t_recall_10']}, {report_dict['__test__t2i_recall_1']}, {report_dict['__test__t2i_recall_5']}, {report_dict['__test__t2i_recall_10']}"
         if self.logger is not None:
             self.logger.report(report_dict,
                                prefix='[Eval] Report @step: ',

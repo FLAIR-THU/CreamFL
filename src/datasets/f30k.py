@@ -87,6 +87,7 @@ class F30kCaptionsCap(Dataset):
         return img, target, index, index, index
 
     def __len__(self):
+        return 1024 # test with less data
         return len(self.data)
 
 

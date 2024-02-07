@@ -125,10 +125,11 @@ class F30kCaptionsCap(Dataset):
         return img, target, caption, index, int(index / 5), index
 
     def __len__(self):
+        return 1024 # test with less data
         return len(self.data)
 
 
 if __name__ == '__main__':
     train = F30kCaptionsCap(train=False)
-    print(len(train))
-    print(train.n_images)
+    print('flickr30k:len(train):', len(train))
+    print('flickr30k:train.n_images', train.n_images)

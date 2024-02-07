@@ -227,7 +227,7 @@ class COCOEvaluator(object):
                  q_ids, g_ids,
                  q_classes=None, g_classes=None,
                  topk=10,
-                 batch_size=1024):
+                 batch_size=32):
         if len(q_features) != len(q_ids):
             raise RuntimeError('length mismatch {}, {}'.format(q_features.shape,
                                                                q_ids.shape))
@@ -273,7 +273,7 @@ class COCOEvaluator(object):
     @torch.no_grad()
     def evaluate_recall(self, q_features, g_features, q_labels, g_labels,
                         q_ids=None, g_ids=None,
-                        batch_size=1024):
+                        batch_size=32):
         """Evaluate recall
 
         Args:
@@ -393,7 +393,7 @@ class COCOEvaluator(object):
     def evaluate(self, dataloader, n_crossfolds=None,
                  n_images_per_crossfold=1000,
                  n_captions_per_crossfold=5000,
-                 eval_batch_size=1024,
+                 eval_batch_size=32,
                  key=None):
         """evaluate image-to-caption and caption-to-image retrieval tasks.
         """

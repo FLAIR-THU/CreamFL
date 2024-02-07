@@ -244,5 +244,5 @@ class CocoTextRetrieval(Dataset):
     # image_id = annotation['image_id']
 
     def __len__(self):
+        return 1024 # test with less data
         return len(self.ids)
-        # return 100

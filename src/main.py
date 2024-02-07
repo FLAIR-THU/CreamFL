@@ -50,18 +50,18 @@ def args():
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--num_img_clients', type=int, default=2)
-    parser.add_argument('--num_txt_clients', type=int, default=2)
-    parser.add_argument('--num_mm_clients', type=int, default=3)
+    parser.add_argument('--num_img_clients', type=int, default=0)
+    parser.add_argument('--num_txt_clients', type=int, default=1)
+    parser.add_argument('--num_mm_clients', type=int, default=0)
 
-    parser.add_argument('--client_num_per_round', type=int, default=2)
+    parser.add_argument('--client_num_per_round', type=int, default=1)
 
     # === dataloader ===
     parser.add_argument('--dataset', type=str, default='cifar10', choices=['svhn', 'cifar10', 'cifar100'],
                         help='dataset name (default: cifar10)')
     parser.add_argument('--data_root', type=str, default=os.environ['HOME'] + "/data/")
-    parser.add_argument('--batch_size', type=int, default=64, metavar='N',
-                        help='input batch size for training (default: 64)')
+    parser.add_argument('--batch_size', type=int, default=32, metavar='N',
+                        help='input batch size for training (default: 32)')
     parser.add_argument('--alpha', type=float, default=0.5)
 
     # === optimization ===
