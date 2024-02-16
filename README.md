@@ -8,11 +8,13 @@ Tasks:
 Goals:
 
 * Learn:
+  * Transformers
   * Multimodal
   * Federated Learning
 
 * Implement networking
-
+  * try FedML
+  * try custom network?
 
 ------------------------
 Begin original readme

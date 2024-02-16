@@ -57,12 +57,15 @@ def args():
     parser.add_argument('--client_num_per_round', type=int, default=1)
 
     # === dataloader ===
-    parser.add_argument('--dataset', type=str, default='cifar10', choices=['svhn', 'cifar10', 'cifar100'],
-                        help='dataset name (default: cifar10)')
+    # parser.add_argument('--dataset', type=str, default='cifar100', choices=['svhn', 'cifar10', 'cifar100'],
+    #                    help='dataset name (default: cifar100)') # not implemented 
     parser.add_argument('--data_root', type=str, default=os.environ['HOME'] + "/data/")
     parser.add_argument('--batch_size', type=int, default=32, metavar='N',
                         help='input batch size for training (default: 32)')
-    parser.add_argument('--alpha', type=float, default=0.5)
+    parser.add_argument('--alpha', type=float, default=0.1,
+                        help='how evenly distributed the data is for img and txt clients (default: 0.1)')
+    parser.add_argument('--max_size', type=int, default=0,
+                        help='maximum number of data samples to use per client (default: 0 (use all data))')
 
     # === optimization ===
     parser.add_argument('--server_lr', type=float, default=0.0002)

@@ -10,8 +10,14 @@ import pickle
 from src.datasets.dataset_L import Language, caption_collate_fn
 from src.utils.color_lib import RGBmean, RGBstdv
 
-
-def get_FL_trainloader(dataset, data_root, num_clients, partition, alpha, batch_size):
+# dataset: str, name of the dataset
+# data_root: str, path to the dataset
+# num_clients: int, number of clients to partition the dataset
+# partition: str, the partition method (homo:homogeneous/iid or hetero=heterogeneous/noniid)
+# alpha: float, dirichlet parameter, if <1, results in a more skewed distribution.
+# batch_size: int, DataLoader batch_size, for test set, it is doubled.
+# max_size: int, maximum number of data samples to use per client, 0 means use all data.
+def get_FL_trainloader(dataset, data_root, num_clients, partition, alpha, batch_size, max_size):
     if dataset == 'cifar100':
         data_transforms = transforms.Compose([transforms.Resize(int(256 * 1.1)),
                                               transforms.RandomRotation(10),
@@ -55,7 +61,7 @@ def get_FL_trainloader(dataset, data_root, num_clients, partition, alpha, batch_
         num_samples = train_set.data.shape[0]
     net_dataidx_map = data_partitioner(dataset, num_samples, num_clients, partition=partition,
                                        check_dir="./data_partition/", alpha=alpha,
-                                       y_train=np.array(train_set.targets))
+                                       y_train=np.array(train_set.targets), max_size=max_size)
     print(f"Samples Num: {[len(i) for i in net_dataidx_map.values()]}")
     net_dataset_map = {i: torch.utils.data.Subset(train_set, net_dataidx_map[i]) for i in net_dataidx_map.keys()}
     if dataset == "cifar100" or dataset == "cifar10":
@@ -76,8 +82,8 @@ def get_FL_trainloader(dataset, data_root, num_clients, partition, alpha, batch_
     return loader_map, test_loader
 
 
-def data_partitioner(dataset, num_samples, num_nets, partition='homo', check_dir=None, alpha=0.5, y_train=None):
-    check_dir = check_dir + f'client_{dataset}'
+def data_partitioner(dataset, num_samples, num_nets, partition='homo', check_dir=None, alpha=0.5, y_train=None, max_size=0):
+    check_dir = check_dir + f'client_{dataset}_{alpha}'
 
     if partition == "homo":
         check_dir = check_dir + "_iid.pkl"
@@ -95,7 +101,7 @@ def data_partitioner(dataset, num_samples, num_nets, partition='homo', check_dir
             net_dataidx_map = pickle.load(open(check_dir, 'rb'))
         else:
             min_size = 0
-            K = max(y_train) + 1  # todo 
+            K = max(y_train) + 1  # Calculate the number of classes in the dataset
             net_dataidx_map = {}
             print('Hetero partition')
             while min_size < (10 if dataset == "cifar100" else (3000 if dataset == "AG_NEWS" else 500)):
@@ -119,6 +125,10 @@ def data_partitioner(dataset, num_samples, num_nets, partition='homo', check_dir
 
             pickle.dump(net_dataidx_map, open(check_dir, 'wb'))
 
+    if max_size > 0:
+        for i in net_dataidx_map.keys():
+            if len(net_dataidx_map[i]) > max_size:
+                net_dataidx_map[i] = net_dataidx_map[i][:max_size]
     return net_dataidx_map
 
 

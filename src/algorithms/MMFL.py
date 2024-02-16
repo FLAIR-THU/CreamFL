@@ -118,6 +118,10 @@ class MMFL(object):
         self.device = torch.device("cuda:%d" % args.device)
 
         os.makedirs(os.environ['HOME'] + f'/data/yClient', exist_ok=True)
+        
+        alpha = args.alpha # was hard-coded to 0.1
+        batch_size = args.batch_size # was hard-coded to 512
+        max_size = args.max_size # introduced by xiegeo
 
         # Create Client Models
         self.img_local_trainers, self.txt_local_trainers, self.mm_local_trainers = [], [], []
@@ -125,7 +129,7 @@ class MMFL(object):
         if args.num_img_clients > 0:
             dataset = 'cifar100'
             self.img_trainloaders, test_set = get_FL_trainloader(dataset, os.environ['HOME'] + "/data/cifar100",
-                                                                 args.num_img_clients, "hetero", 0.1, 512)
+                                                                 args.num_img_clients, "hetero", alpha, batch_size, max_size)
             dataset = 'Cifar100'
             dst = os.environ['HOME'] + f'/data/yClient/{dataset}'
             self.img_local_trainers = []
@@ -140,7 +144,7 @@ class MMFL(object):
         if args.num_txt_clients > 0:
             dataset = 'AG_NEWS'
             self.txt_trainloaders, test_set = get_FL_trainloader(dataset, os.environ['HOME'] + "/data",
-                                                                 args.num_txt_clients, "hetero", 0.1, 512)
+                                                                 args.num_txt_clients, "hetero", alpha, batch_size)
             client_id = 1
             dst = os.environ['HOME'] + f'/data/yClient/{dataset}-{client_id}'
             self.txt_local_trainers = []
@@ -170,7 +174,7 @@ class MMFL(object):
                                     mlp_local=self.args.mlp_local))
                 if is_test and client_id == 0:
                     break
-            print(f"Samples Num: {[len(i.train_loader.dataset) for i in self.mm_local_trainers]}")
+            print(f"MM Clients Samples Num: {[len(i.train_loader.dataset) for i in self.mm_local_trainers]}")
 
         self.total_local_trainers = self.img_local_trainers + self.txt_local_trainers + self.mm_local_trainers
 
