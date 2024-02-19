@@ -144,7 +144,7 @@ class MMFL(object):
         if args.num_txt_clients > 0:
             dataset = 'AG_NEWS'
             self.txt_trainloaders, test_set = get_FL_trainloader(dataset, os.environ['HOME'] + "/data",
-                                                                 args.num_txt_clients, "hetero", alpha, batch_size)
+                                                                 args.num_txt_clients, "hetero", alpha, batch_size, max_size)
             client_id = 1
             dst = os.environ['HOME'] + f'/data/yClient/{dataset}-{client_id}'
             self.txt_local_trainers = []
