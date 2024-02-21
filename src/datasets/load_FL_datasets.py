@@ -62,7 +62,8 @@ def get_FL_trainloader(dataset, data_root, num_clients, partition, alpha, batch_
     net_dataidx_map = data_partitioner(dataset, num_samples, num_clients, partition=partition,
                                        check_dir="./data_partition/", alpha=alpha,
                                        y_train=np.array(train_set.targets), max_size=max_size)
-    print(f"Samples Num: {[len(i) for i in net_dataidx_map.values()]}")
+    print(f"get_FL_trainloader Samples Num: {[len(i) for i in net_dataidx_map.values()]}")
+    print(f"get_FL_trainloader Samples Keys: {net_dataidx_map.keys()}")
     net_dataset_map = {i: torch.utils.data.Subset(train_set, net_dataidx_map[i]) for i in net_dataidx_map.keys()}
     if dataset == "cifar100" or dataset == "cifar10":
         loader_map = {
@@ -83,47 +84,42 @@ def get_FL_trainloader(dataset, data_root, num_clients, partition, alpha, batch_
 
 
 def data_partitioner(dataset, num_samples, num_nets, partition='homo', check_dir=None, alpha=0.5, y_train=None, max_size=0):
-    check_dir = check_dir + f'client_{dataset}_{alpha}'
+    check_dir = check_dir + f'client_{dataset}_{num_nets}_nets_{num_samples}_samples_{partition}_{alpha}.pkl'
 
-    if partition == "homo":
-        check_dir = check_dir + "_iid.pkl"
-        if os.path.isfile(check_dir):
-            net_dataidx_map = pickle.load(open(check_dir, 'rb'))
-        else:
-            idxs = np.random.permutation(num_samples)
-            batch_idxs = np.array_split(idxs, num_nets)
-            net_dataidx_map = {i: batch_idxs[i] for i in range(num_nets)}
-            pickle.dump(net_dataidx_map, open(check_dir, 'wb'))
+    if os.path.isfile(check_dir):
+        net_dataidx_map = pickle.load(open(check_dir, 'rb'))
+
+    elif partition == "homo":
+        idxs = np.random.permutation(num_samples)
+        batch_idxs = np.array_split(idxs, num_nets)
+        net_dataidx_map = {i: batch_idxs[i] for i in range(num_nets)}
+        pickle.dump(net_dataidx_map, open(check_dir, 'wb'))
 
     elif partition == "hetero":
-        check_dir = check_dir + "_noniid.pkl"
-        if os.path.isfile(check_dir):
-            net_dataidx_map = pickle.load(open(check_dir, 'rb'))
-        else:
-            min_size = 0
-            K = max(y_train) + 1  # Calculate the number of classes in the dataset
-            net_dataidx_map = {}
-            print('Hetero partition')
-            while min_size < (10 if dataset == "cifar100" else (3000 if dataset == "AG_NEWS" else 500)):
-                idx_batch = [[] for _ in range(num_nets)]
-                # for each class in the dataset
-                for k in range(K):
-                    idx_k = np.where(y_train == k)[0]
-                    np.random.shuffle(idx_k)
-                    proportions = np.random.dirichlet(np.repeat(alpha, num_nets))
-                    ## Balance
-                    proportions = np.array(
-                        [p * (len(idx_j) < num_samples / num_nets) for p, idx_j in zip(proportions, idx_batch)])
-                    proportions = proportions / proportions.sum()
-                    proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
-                    idx_batch = [idx_j + idx.tolist() for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))]
-                    min_size = min([len(idx_j) for idx_j in idx_batch])
+        min_size = 0
+        K = max(y_train) + 1  # Calculate the number of classes in the dataset
+        net_dataidx_map = {}
+        print('Hetero partition')
+        while min_size < (10 if dataset == "cifar100" else (3000 if dataset == "AG_NEWS" else 500)):
+            idx_batch = [[] for _ in range(num_nets)]
+            # for each class in the dataset
+            for k in range(K):
+                idx_k = np.where(y_train == k)[0]
+                np.random.shuffle(idx_k)
+                proportions = np.random.dirichlet(np.repeat(alpha, num_nets))
+                ## Balance
+                proportions = np.array(
+                    [p * (len(idx_j) < num_samples / num_nets) for p, idx_j in zip(proportions, idx_batch)])
+                proportions = proportions / proportions.sum()
+                proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
+                idx_batch = [idx_j + idx.tolist() for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))]
+                min_size = min([len(idx_j) for idx_j in idx_batch])
 
-            for j in range(num_nets):
-                np.random.shuffle(idx_batch[j])
-                net_dataidx_map[j] = idx_batch[j]
+        for j in range(num_nets):
+            np.random.shuffle(idx_batch[j])
+            net_dataidx_map[j] = idx_batch[j]
 
-            pickle.dump(net_dataidx_map, open(check_dir, 'wb'))
+        pickle.dump(net_dataidx_map, open(check_dir, 'wb'))
 
     if max_size > 0:
         for i in net_dataidx_map.keys():

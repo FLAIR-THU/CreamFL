@@ -50,11 +50,11 @@ def args():
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--num_img_clients', type=int, default=0)
-    parser.add_argument('--num_txt_clients', type=int, default=1)
-    parser.add_argument('--num_mm_clients', type=int, default=0)
+    parser.add_argument('--num_img_clients', type=int, default=2)
+    parser.add_argument('--num_txt_clients', type=int, default=2)
+    parser.add_argument('--num_mm_clients', type=int, default=3)
 
-    parser.add_argument('--client_num_per_round', type=int, default=1)
+    parser.add_argument('--client_num_per_round', type=int, default=2)
 
     # === dataloader ===
     # parser.add_argument('--dataset', type=str, default='cifar100', choices=['svhn', 'cifar10', 'cifar100'],
@@ -66,6 +66,7 @@ def args():
                         help='how evenly distributed the data is for img and txt clients (default: 0.1)')
     parser.add_argument('--max_size', type=int, default=0,
                         help='maximum number of data samples to use per client (default: 0 (use all data))')
+    parser.add_argument('--pub_data_num', type=int, default=50000, help='coco global training data size')
 
     # === optimization ===
     parser.add_argument('--server_lr', type=float, default=0.0002)
@@ -100,8 +101,7 @@ def args():
 
     parser.add_argument('--data_local', action='store_true', default=False,
                         help='change data directory to ~/data_local')
-
-    parser.add_argument('--pub_data_num', type=int, default=50000, help='communication')
+    
     parser.add_argument('--feature_dim', type=int, default=256)
 
     parser.add_argument('--not_bert', action='store_true', default=False, help="server bert, client not bert")
@@ -123,8 +123,8 @@ if __name__ == "__main__":
     args.log_dir = args.save_dirs['logs']
     helper.set_seed(args.seed)
 
-    Algo.create_model(args)
-    Algo.load_dataset(args)
+    Algo.create_model(args) # create client models and datasets
+    Algo.load_dataset(args) # global model and dataset
 
     for round_n in range(args.comm_rounds):
         Algo.train(round_n)

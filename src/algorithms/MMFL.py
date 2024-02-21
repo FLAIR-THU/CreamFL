@@ -90,7 +90,7 @@ class MMFL(object):
     def load_dataset(self, args):
         dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
         vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
-        self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, vocab_path)
+        self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, args.pub_data_num, args.max_size, vocab_path)
 
         self.engine = TrainerEngine()
         self.engine.set_logger(self.logger)

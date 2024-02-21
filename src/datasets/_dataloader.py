@@ -341,8 +341,8 @@ def see_coco_len(dataset_root=os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'):
                            transform=None,
                            target_transform=None)
 
-    print(f'train {len(train)}')
-    print(f'test {len(test)}')
+    print(f'see_coco_len train {len(train)}')
+    print(f'see_coco_len test {len(test)}')
 
 
 def _get_F30k_loader(vocab,
