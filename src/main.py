@@ -39,8 +39,8 @@ def args():
     parser.add_argument('--name', type=str, default='Test', help='The name for different experimental runs.')
     parser.add_argument('--exp_dir', type=str, default='./experiments/',
                         help='Locations to save different experimental runs.')
-    parser.add_argument('--local_epochs', type=int, default=2)
-    parser.add_argument('--comm_rounds', type=int, default=2)
+    parser.add_argument('--local_epochs', type=int, default=2) # original default = 5
+    parser.add_argument('--comm_rounds', type=int, default=2) # original default = 30
 
     parser.add_argument('--model', type=str, default='resnet18', help='Target model name')
     parser.add_argument('--img_model_local', type=str, default='resnet10')
@@ -50,11 +50,11 @@ def args():
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--num_img_clients', type=int, default=2)
-    parser.add_argument('--num_txt_clients', type=int, default=2)
-    parser.add_argument('--num_mm_clients', type=int, default=3)
+    parser.add_argument('--num_img_clients', type=int, default=2) # original default = 10
+    parser.add_argument('--num_txt_clients', type=int, default=2) # original default = 10
+    parser.add_argument('--num_mm_clients', type=int, default=3) # original default = 15
 
-    parser.add_argument('--client_num_per_round', type=int, default=2)
+    parser.add_argument('--client_num_per_round', type=int, default=2) # original default = 10
 
     # === dataloader ===
     # parser.add_argument('--dataset', type=str, default='cifar100', choices=['svhn', 'cifar10', 'cifar100'],

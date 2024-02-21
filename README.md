@@ -2,19 +2,22 @@
 Tasks:
 
 * get code base running locally.
-  [x] changed default args to use less memory
-  [x] python src/main.py --name CreamFL --server_lr 1e-5 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --not_bert
+  * changed default args to use less memory
+  * quick test run: python src/main.py --name CreamFL --server_lr 1e-5 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --not_bert --max_size 64 --pub_data_num=64 --num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3 --client_num_per_round 2 --local_epochs 2 --comm_rounds 2
 
 Goals:
 
 * Learn:
   * Transformers
+    * [Attention Is All You Need 2017 v7(2023)](https://arxiv.org/abs/1706.03762)
+    * [An Introduction to Transformers 2023 v5(2024)](https://arxiv.org/abs/2304.10557)
   * Multimodal
   * Federated Learning
+    * CreamFL is based on Federated Averaging [Communication-Efficient Learning of Deep Networks from Decentralized Data 2016 v4(2023)](https://arxiv.org/abs/1602.05629)
 
 * Implement networking
-  * try FedML
-  * try custom network?
+  * try FedML? (to much rewrite for fedML to do it properly, otherwise too hacky.)
+  * try custom network? (do a quick demo version)
 
 ------------------------
 Begin original readme
