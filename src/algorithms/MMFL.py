@@ -299,29 +299,41 @@ class MMFL(object):
         if self.config.model.use_img_client or self.config.model.use_txt_client or self.config.model.use_mm_client:
             client_loss_cri = nn.MSELoss()
 
-        def aggregation(i_vec=img_vec, t_vec=txt_vec, i_num=img_num, t_num=txt_num):
+        def aggregation(i_vec=img_vec, t_vec=txt_vec):
             if self.args.agg_method == "con_w":
-                contrastive_w = []
-                for vec in i_vec:  # vec: [50000, n_feature], global_txt_feature: [50000, n_feature]
-                    logits = torch.matmul(vec, self.global_txt_feature.T)  # [50000, 50000]
-                    exp_logits = torch.exp(logits)
-                    log_prob = logits - torch.log(torch.sum(exp_logits, dim=1, keepdim=True))
-                    contrastive_w.append(torch.diagonal(log_prob).reshape(1, -1))
-                contrastive_w = torch.softmax(torch.cat(contrastive_w, dim=0), dim=0)
-                for i in range(len(i_vec)):
-                    i_vec[i] = (i_vec[i] * contrastive_w[i].reshape(-1, 1)).unsqueeze(0)
-                i_vec = torch.sum(torch.cat(i_vec, dim=0), dim=0)  # aggregated image vectors
+                if not i_vec:
+                     self.logger.log("distill.aggregation i_vec is empty")
+                else:
+                    contrastive_w = []
+                    for vec in i_vec:  # vec: [50000, n_feature], global_txt_feature: [50000, n_feature]
+                        logits = torch.matmul(vec, self.global_txt_feature.T)  # [50000, 50000]
+                        exp_logits = torch.exp(logits)
+                        log_prob = logits - torch.log(torch.sum(exp_logits, dim=1, keepdim=True))
+                        contrastive_w.append(torch.diagonal(log_prob).reshape(1, -1))
+                    if not contrastive_w:
+                        self.logger.log("distill.aggregation No tensors were added to contrastive_w for images")
+                    else:
+                        contrastive_w = torch.softmax(torch.cat(contrastive_w, dim=0), dim=0)
+                        for i in range(len(i_vec)):
+                            i_vec[i] = (i_vec[i] * contrastive_w[i].reshape(-1, 1)).unsqueeze(0)
+                    i_vec = torch.sum(torch.cat(i_vec, dim=0), dim=0)  # aggregated image vectors
 
-                contrastive_w = []
-                for vec in t_vec:  # vec: [50000, n_feature], global_txt_feature: [50000, n_feature]
-                    logits = torch.matmul(vec, self.global_img_feature.T)  # [50000, 50000]
-                    exp_logits = torch.exp(logits)
-                    log_prob = logits - torch.log(torch.sum(exp_logits, dim=1, keepdim=True))
-                    contrastive_w.append(torch.diagonal(log_prob).reshape(1, -1))
-                contrastive_w = torch.softmax(torch.cat(contrastive_w, dim=0), dim=0)
-                for i in range(len(t_vec)):
-                    t_vec[i] = (t_vec[i] * contrastive_w[i].reshape(-1, 1)).unsqueeze(0)
-                t_vec = torch.sum(torch.cat(t_vec, dim=0), dim=0)  # aggregated text vectors
+                if not t_vec:
+                     self.logger.log("distill.aggregation t_vec is empty")
+                else:
+                    contrastive_w = []
+                    for vec in t_vec:  # vec: [50000, n_feature], global_txt_feature: [50000, n_feature]
+                        logits = torch.matmul(vec, self.global_img_feature.T)  # [50000, 50000]
+                        exp_logits = torch.exp(logits)
+                        log_prob = logits - torch.log(torch.sum(exp_logits, dim=1, keepdim=True))
+                        contrastive_w.append(torch.diagonal(log_prob).reshape(1, -1))
+                    if not contrastive_w:
+                        self.logger.log("distill.aggregation No tensors were added to contrastive_w for texts")
+                    else:
+                        contrastive_w = torch.softmax(torch.cat(contrastive_w, dim=0), dim=0)
+                        for i in range(len(t_vec)):
+                            t_vec[i] = (t_vec[i] * contrastive_w[i].reshape(-1, 1)).unsqueeze(0)
+                    t_vec = torch.sum(torch.cat(t_vec, dim=0), dim=0)  # aggregated text vectors
             else:
                 raise NotImplementedError
 
@@ -351,17 +363,17 @@ class MMFL(object):
 
                 return client_loss_cri(output, target.type_as(output))
 
-            if self.args.num_img_clients > 0:
+            if self.args.num_img_clients > 0 and len(img_num)> 0:
                 out_img = output['image_features']
                 d_idx = operator.itemgetter(*index)(distill_dict)  # idx of the current batch
                 target_img = self.img_vec[d_idx, :].type_as(out_img)
                 loss += self.args.kd_weight * code_sim(out_img, target_img, self.config)
-            if self.args.num_txt_clients > 0:
+            if self.args.num_txt_clients > 0 and len(txt_num) > 0:
                 out_txt = output['caption_features']
                 d_idx = operator.itemgetter(*index)(distill_dict)  # idx of the current batch
                 target_txt = self.txt_vec[d_idx, :].type_as(out_txt)
                 loss += self.args.kd_weight * code_sim(out_txt, target_txt, self.config)
-            if self.args.num_mm_clients > 0:
+            if self.args.num_mm_clients > 0 and len(img_num) > 0 and len(txt_num) > 0:
                 out_img = output['image_features']
                 d_idx = operator.itemgetter(*index)(distill_dict)  # idx of the current batch
                 target_img = self.img_vec[d_idx, :].type_as(out_img)

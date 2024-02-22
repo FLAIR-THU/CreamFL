@@ -66,7 +66,10 @@ def args():
                         help='how evenly distributed the data is for img and txt clients (default: 0.1)')
     parser.add_argument('--max_size', type=int, default=0,
                         help='maximum number of data samples to use per client (default: 0 (use all data))')
+    
+    # === communication cost ===
     parser.add_argument('--pub_data_num', type=int, default=50000, help='coco global training data size')
+    parser.add_argument('--feature_dim', type=int, default=256)
 
     # === optimization ===
     parser.add_argument('--server_lr', type=float, default=0.0002)
@@ -101,8 +104,6 @@ def args():
 
     parser.add_argument('--data_local', action='store_true', default=False,
                         help='change data directory to ~/data_local')
-    
-    parser.add_argument('--feature_dim', type=int, default=256)
 
     parser.add_argument('--not_bert', action='store_true', default=False, help="server bert, client not bert")
 

@@ -3,7 +3,7 @@ Tasks:
 
 * get code base running locally.
   * changed default args to use less memory
-  * quick test run: python src/main.py --name CreamFL --server_lr 1e-5 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --not_bert --max_size 64 --pub_data_num=64 --num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3 --client_num_per_round 2 --local_epochs 2 --comm_rounds 2
+  * quick test run: python src/main.py --name CreamFL --server_lr 1e-5 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --not_bert --max_size 64 --pub_data_num 64 --feature_dim 32 --num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3 --client_num_per_round 2 --local_epochs 2 --comm_rounds 2 
 
 Goals:
 

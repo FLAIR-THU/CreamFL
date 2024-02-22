@@ -12,6 +12,9 @@
         "Multimodal",
         "PCME",
         "Qiying",
+        "svhn",
+        "tqdm",
+        "trainloader",
         "Yimu"
     ]
 }
