@@ -116,7 +116,7 @@ class EngineBase(object):
 
     def set_dset(self, dset_name, client=-1, vocab_path='./datasets/vocabs/coco_vocab.pkl'):
         if dset_name == "flicker30k":
-            dataloaders, vocab = prepare_f30k_dataloaders(self.config.dataloader, '', vocab_path, client=client)
+            dataloaders, vocab = prepare_f30k_dataloaders(self.config.dataloader, '', self.args.max_size, vocab_path, client=client)
             self.train_loader = dataloaders['train']
             self.val_loader = dataloaders['te']
         elif dset_name == "coco":

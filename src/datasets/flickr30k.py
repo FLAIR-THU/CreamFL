@@ -23,13 +23,14 @@ import pickle
 class F30kCaptionsCap(Dataset):
 
     def __init__(self, annFile='./dataset_k_split.pkl', train=True,
-                 transform=None, target_transform=None, is_iid=False, client=-1):
+                 transform=None, target_transform=None, is_iid=False, client=-1, max_size=0):
         split = 'train' if train else 'test'
         self.transform = transform
         self.data = pickle.load(open(annFile, 'rb'))
         if split not in self.data.keys():
             assert False, f'split wrong {split}'
         self.data = self.data[split]  # 145,000 img-txt pairs, in list
+        self.max_size = max_size
 
         if client > -1 and train:
             # print(self.data)
@@ -125,7 +126,8 @@ class F30kCaptionsCap(Dataset):
         return img, target, caption, index, int(index / 5), index
 
     def __len__(self):
-        return 1024 # test with less data
+        if self.max_size != 0:
+            return min(self.max_size, len(self.data))
         return len(self.data)
 
 

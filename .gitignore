@@ -3,5 +3,6 @@ a7env/
 __pycache__
 wandb/
 *.log
-CreamFL-best_model.pt
-CreamFL-last_model.pt
+*-best_model.pt
+*-last_model.pt
+coco_subset_idx_*

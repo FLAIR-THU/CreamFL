@@ -347,6 +347,7 @@ def see_coco_len(dataset_root=os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'):
 
 def _get_F30k_loader(vocab,
                      num_workers,
+                     max_size,
                      batch_size=64,
                      train=False,
                      split='train',
@@ -362,19 +363,20 @@ def _get_F30k_loader(vocab,
 
     coco_dataset = F30kCaptionsCap(train=True if split == 'train' else False,
                                    transform=_image_transform,
-                                   target_transform=_caption_transform, client=client)
+                                   target_transform=_caption_transform, client=client, max_size=max_size)
     dataloader = DataLoader(coco_dataset,
                             batch_size=batch_size,
                             shuffle=train,
                             num_workers=num_workers,
                             collate_fn=image_to_caption_collate_fn,
-                            pin_memory=True)
+                            pin_memory=False)
     print(f'Loading F30k Caption: n_images {coco_dataset.n_images} n_captions {len(coco_dataset)}...')
     return dataloader
 
 
 def prepare_f30k_dataloaders(dataloader_config,
                              dataset_root,
+                             max_size,
                              vocab_path='./vocabs/coco_vocab.pkl',
                              client=-1,
                              num_workers=6):
@@ -398,7 +400,8 @@ def prepare_f30k_dataloaders(dataloader_config,
     dataloaders = {}
     dataloaders['train'] = _get_F30k_loader(
         vocab,
-        num_workers=num_workers,
+        num_workers,
+        max_size,
         batch_size=batch_size,
         train=True,
         split='train',
@@ -419,7 +422,8 @@ def prepare_f30k_dataloaders(dataloader_config,
 
     dataloaders['te'] = _get_F30k_loader(
         vocab,
-        num_workers=num_workers,
+        num_workers,
+        max_size,
         batch_size=eval_batch_size,
         train=False,
         split='test',
@@ -434,8 +438,8 @@ def see_f30k_len():
 
     test = F30kCaptionsCap(split='test')
 
-    print(f'f30k train {len(train)}')
-    print(f'f30k test {len(test)}')
+    print(f'see_f30k_len train {len(train)}')
+    print(f'see_f30k_len test {len(test)}')
 
 
 if __name__ == '__main__':

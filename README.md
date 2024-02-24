@@ -1,11 +1,22 @@
+# Networking for CreamFL
 
-Tasks:
+## Tasks
 
 * get code base running locally.
-  * changed default args to use less memory
-  * quick test run: python src/main.py --name CreamFL --server_lr 1e-5 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --not_bert --max_size 64 --pub_data_num 64 --feature_dim 32 --num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3 --client_num_per_round 2 --local_epochs 2 --comm_rounds 2 
+  * figure out how to run though the entire code quickly.
+  * quick test run: `python src/main.py --name quick --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --max_size 64 --pub_data_num 2 --feature_dim 2 --num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3 --client_num_per_round 2 --local_epochs 2 --comm_rounds 2 --not_bert`
+    * `--contrast_local_inter --contrast_local_intra --interintra_weight 0.5` Cream options.
+    * `--max_size` added by xiegeo, 0 or 10000 for old behaviour, client training data count, per client.
+    * `--pub_data_num` public training data size (default 50000), proportional to communication cost (memory for local simulation) cost.
+    * `--feature_dim` number of public features (default 256), proportional to communication cost.
+    * `--num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3 --client_num_per_round 2` number of max client of each type, and total number of client per round.
+    * `--local_epochs 2 --comm_rounds 2` local and global rounds.
+    * `--not_bert` use a simpler model
 
-Goals:
+* get code to run in a network
+  * ...
+
+## Goals
 
 * Learn:
   * Transformers

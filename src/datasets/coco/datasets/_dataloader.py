@@ -330,6 +330,7 @@ def see_coco_len(dataset_root='/data/mmdata/MSCOCO/2014'):
 
 def _get_F30k_loader(vocab,
                      num_workers,
+                     max_size,
                      batch_size=64,
                      train=False,
                      split='train',
@@ -344,7 +345,8 @@ def _get_F30k_loader(vocab,
 
     coco_dataset = F30kCaptionsCap(split=split,
                                    transform=_image_transform,
-                                   target_transform=_caption_transform)
+                                   target_transform=_caption_transform,
+                                   max_size=max_size)
 
     dataloader = DataLoader(coco_dataset,
                             batch_size=batch_size,
@@ -358,6 +360,7 @@ def _get_F30k_loader(vocab,
 
 def prepare_f30k_dataloaders(dataloader_config,
                              dataset_root,
+                             max_size,
                              vocab_path='./vocabs/coco_vocab.pkl',
                              num_workers=6):
     """Prepare MS-COCO Caption train / val / test dataloaders
@@ -380,7 +383,8 @@ def prepare_f30k_dataloaders(dataloader_config,
     dataloaders = {}
     dataloaders['train'] = _get_F30k_loader(
         vocab,
-        num_workers=num_workers,
+        num_workers,
+        max_size,
         batch_size=batch_size,
         train=True,
         split='train',
@@ -390,7 +394,8 @@ def prepare_f30k_dataloaders(dataloader_config,
 
     dataloaders['val'] = _get_F30k_loader(
         vocab,
-        num_workers=num_workers,
+        num_workers,
+        max_size,
         batch_size=eval_batch_size,
         train=False,
         split='val',
@@ -399,7 +404,8 @@ def prepare_f30k_dataloaders(dataloader_config,
 
     dataloaders['te'] = _get_F30k_loader(
         vocab,
-        num_workers=num_workers,
+        num_workers,
+        max_size,
         batch_size=eval_batch_size,
         train=False,
         split='test',

@@ -99,7 +99,7 @@ class MMFL(object):
 
         self._dataloaders = self.dataloaders_global.copy()
         self.evaluator = COCOEvaluator(eval_method='matmul',
-                                       verbose=False,
+                                       verbose=True,
                                        eval_device='cuda',
                                        n_crossfolds=5)
         self.engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local)

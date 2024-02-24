@@ -56,7 +56,7 @@ class F30kCaptionsCap(Dataset):
     """
 
     def __init__(self, annFile=os.environ['HOME'] + '/data/mmdata/Flick30k/dataset_k_split.pkl', split='train',
-                 transform=None, target_transform=None
+                 transform=None, target_transform=None, max_size=0
                  ):
         self.transform = transform
         self.target_transform = target_transform
@@ -64,6 +64,7 @@ class F30kCaptionsCap(Dataset):
         if split not in self.data.keys():
             assert False, f'split wrong {split}'
         self.data = self.data[split]
+        self.max_size = max_size
 
     def __getitem__(self, index):
         """
@@ -87,7 +88,8 @@ class F30kCaptionsCap(Dataset):
         return img, target, index, index, index
 
     def __len__(self):
-        return 1024 # test with less data
+        if self.max_size != 0:
+            return min(self.max_size, len(self.data))
         return len(self.data)
 
 
