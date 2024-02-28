@@ -20,11 +20,13 @@
 
 * Learn:
   * Transformers
-    * [Attention Is All You Need 2017 v7(2023)](https://arxiv.org/abs/1706.03762)
+    * Transformer [Attention Is All You Need 2017 v7(2023)](https://arxiv.org/abs/1706.03762)
     * [An Introduction to Transformers 2023 v5(2024)](https://arxiv.org/abs/2304.10557)
   * Multimodal
+    * [DeViSE: A Deep Visual-Semantic Embedding Model 2013](https://research.google.com/pubs/archive/41473.pdf)
+    * PCME [Probabilistic Embeddings for Cross-Modal Retrieval 2021 v2](https://arxiv.org/abs/2101.05068) <https://github.com/naver-ai/pcme>
   * Federated Learning
-    * CreamFL is based on Federated Averaging [Communication-Efficient Learning of Deep Networks from Decentralized Data 2016 v4(2023)](https://arxiv.org/abs/1602.05629)
+    * Federated Averaging [Communication-Efficient Learning of Deep Networks from Decentralized Data 2016 v4(2023)](https://arxiv.org/abs/1602.05629)
 
 * Implement networking
   * try FedML? (to much rewrite for fedML to do it properly, otherwise too hacky.)

@@ -15,6 +15,7 @@
         "svhn",
         "tqdm",
         "trainloader",
+        "wandb",
         "Yimu"
     ]
 }
