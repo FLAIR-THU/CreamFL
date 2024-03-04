@@ -14,7 +14,7 @@
     * `--not_bert` use a simpler model
 
 * get code to run in a network
-  * ...
+  * see the "How to run the network" section.
 
 ## Goals
 
@@ -31,6 +31,35 @@
 * Implement networking
   * try FedML? (to much rewrite for fedML to do it properly, otherwise too hacky.)
   * try custom network? (do a quick demo version)
+
+## How to run the network
+
+### Configuration
+
+* flags: the same as local version.
+* fed_config: setup server and client options. Takes precedence over flags.
+
+### Run
+
+A network requires n + 2 processes. Where n is the number of clients,
+plus a command server over http, and a global round computation provider.
+
+#### Command server
+
+```bash
+python src/federation/server.py
+```
+
+#### Global round computation provider
+
+#### Clients
+
+### File sharing
+
+The network has to share the learned features. This could be through a file server,
+a CDN, or shared network storage, ex.  Directly accessing the same files is the
+easies to implement and easily extends to shared network storage, so this is implemented
+first for easy of local testing without lose of generality.
 
 ------------------------
 Begin original readme

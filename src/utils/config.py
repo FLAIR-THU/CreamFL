@@ -103,6 +103,7 @@ def parse_config(config_fname: str,
                  delimiter: str = '__',
                  strict_cast: bool = True,
                  verbose: bool = False,
+                 processor: function = ,
                  **kwargs) -> munch.Munch:
     """Parse the given configuration file with additional options to overwrite.
 

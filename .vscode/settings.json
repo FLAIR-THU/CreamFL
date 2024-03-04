@@ -3,6 +3,8 @@
         "allimages",
         "cifar",
         "CIFAR",
+        "crossfolds",
+        "cudnn",
         "flickr",
         "interintra",
         "Jingjing",

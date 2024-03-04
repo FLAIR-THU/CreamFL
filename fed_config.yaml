@@ -5,7 +5,7 @@ wandb:
 server:
   api_url: "localhost:2323/cream_api"
   min_clients: 2 # the number of required clients reporting to start global distillation.
-  max_clients: 4 # the number of clients reached to start global distillation immediately.
+  max_clients: 2 # the number of clients reached to start global distillation immediately.
   wait_duration: 10m # the duration to wait for clients to report before starting global distillation.
 
 
@@ -17,11 +17,7 @@ clients:
     data_partition: "client_AG_NEWS_10_nets_120000_samples_hetero_0.1.pkl" 
     data_partition_index: 0 # This is only for testing purposes. In a real-world scenario, the data will not be loaded from the same dataset
   - name: "txt_1"
-    inherit: "txt_0" # inherit the configuration from the previous client as defaults.
-    data_partition_index: 1
-  - name: "txt_2"
-    inherit: "txt_0"
-    data_partition_index: 2
-  - name: "txt_3"
-    inherit: "txt_0"
-    data_partition_index: 3
+    data_type: txt # img, txt, or mm: the type of data the client is handling.
+    local_epochs: 5
+    data_partition: "client_AG_NEWS_10_nets_120000_samples_hetero_0.1.pkl" 
+    data_partition_index: 1 # This is only for testing purposes. In a real-world scenario, the data will not be loaded from the same dataset
