@@ -84,9 +84,11 @@ class Client:
         
     def run(self):
         while True:
-            self.logger.log(f"Client {self.name} is staring a new round.")
+            self.logger.log(f"Client {self.name} is starting a new round.")
             server_state = api.get_server_state(self.context, expected_state=api.RoundState.COLLECT)
             self.logger.log(f"Server state: {server_state.round_state}, round number: {server_state.round_number}, global feature hash: {server_state.feature_hash}")
+            global_feature = api.get_global_feature(self.context, server_state)
+            self.logger.log(f"Global feature retrieved. Shape: {global_feature.shape}")
 
 
 

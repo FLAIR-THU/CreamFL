@@ -122,8 +122,8 @@ def feature_hash(data):
 
 class GlobalFeature:
     def __init__(self, img: torch.Tensor, txt: torch.Tensor, distill_index: list):
-        self.img = img
-        self.txt = txt
+        self.img: torch.Tensor = img
+        self.txt: torch.Tensor = txt
         self.distill_index = distill_index
 
     def save(self, path):
@@ -138,7 +138,10 @@ class GlobalFeature:
     def load(cls, path, hash):
         fn = f"{path}/{hash}.pkl"
         with open(fn, 'rb') as f:
-            return pickle.load(f)
+            obj = pickle.load(f)
+        if not isinstance(obj, cls):
+            raise ValueError(f"Object loaded from {fn} is not an instance of GlobalFeature")
+        return obj
 
 def status_sleep(context, msg):
     context.logger.log(f"{msg}, sleeping for 10 seconds.")
@@ -167,17 +170,12 @@ def get_server_state(context:Context, expected_state: Optional[RoundState] = Non
         except Exception as e:
             error_sleep(context, e)
 
+
 def get_global_feature(context:Context, state:ServerState):
     """
     Get the global feature from a distributed storage service.
 
     Only mounted files are supported currently.
+
     """
-    while True:
-        try:
-            url = context.fed_config.server.api_url + f"/global_feature/{hash}"
-            context.logger.log(f"Getting global feature from {url}")
-            resp = requests.get(url)
-            return GlobalFeature.load(context.fed_config.server.feature_path, hash)
-        except Exception as e:
-            error_sleep(context, e)
+    return GlobalFeature.load(context.fed_config.feature_store, state.feature_hash)
