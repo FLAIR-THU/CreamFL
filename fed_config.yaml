@@ -1,6 +1,8 @@
 wandb:
   name: "cream_api"
 
+feature_store: "/tmp/cream_api" # the path to the feature store where client and global features are shared.
+
 # server configuration
 server:
   api_url: "localhost:2323/cream_api"

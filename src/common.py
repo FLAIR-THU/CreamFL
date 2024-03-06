@@ -1,6 +1,9 @@
 import argparse
 import os
 
+from utils.helper import Helper as helper
+
+
 
 def add_args(parser: argparse.ArgumentParser):
     parser.add_argument('--name', type=str, default='Test', help='The name for different experimental runs.')
@@ -74,9 +77,11 @@ def add_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('--not_bert', action='store_true', default=False, help="server bert, client not bert")
 
+    # === federated learning networking ===
     parser.add_argument('--fed_config', default='fed_config.yaml', help="federation network configuration file")
+    parser.add_argument('--client_name', help="client name, only used by clients")
 
-def init_wandb(args):
+def init_wandb(args, script=None):
     """
   wandb will automatically save the log
 
@@ -95,6 +100,9 @@ def init_wandb(args):
 
     name = str(args.name)
 
+    if script is not None:
+        name = f"{name}-{script}"
+
     wandb.init(
         project="CreamFL",
         name=name,
@@ -104,3 +112,13 @@ def init_wandb(args):
     )
 
     return wandb
+
+def prepare_args(description: str, script=None):
+    parser = argparse.ArgumentParser(description=description)
+    add_args(parser)
+    args = parser.parse_args()
+    wandb = init_wandb(args, script=script)
+    args.save_dirs = helper.get_save_dirs(args.exp_dir, args.name)
+    args.log_dir = args.save_dirs['logs']
+    helper.set_seed(args.seed)
+    return args, wandb

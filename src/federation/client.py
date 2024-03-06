@@ -27,33 +27,40 @@ from src.utils.config import parse_config
 from src.utils.load_datasets import prepare_coco_dataloaders
 from src.utils.logger import PythonLogger
 
+import api
+
 try:
     from apex import amp
 except ImportError:
     print('failed to import apex')
 
 class Client:
-    def __init__(self, args, client_config, fed_config):
+    def __init__(self, context):
         # all configs
-        self.args = args
-        self.client_config = client_config
-        self.fed = fed_config
+        self.context = context
+
+        # validation for clients
+        if context.args.client_name is None:
+            raise ValueError("The client_name argument is required for clients")
+        if context.args.client_name not in context.fed_config.clients:
+            raise ValueError(f"Client name {context.args.client_name} not found in configuration file {context.args.fed_config}")
 
         # commonly accessed configs
-        self.name = client_config.name
+        self.client_config = context.fed_config.clients[context.args.client_name]
+        self.name = context.args.client_name
+        self.device = context.device
 
-        # set in get_
-        self.device = None
+        # will setup in setup_data_loader
         self.client_trainer = None
-
  
-    def get_data_loader(self, client_config):
+    def setup_data_loader(self):
         self.logger.log('start creating model and partition datasets')
-        self.device = torch.device("cuda:%d" % args.device)
 
         os.makedirs(os.environ['HOME'] + f'/data/yClient', exist_ok=True)
 
-        args = self.args
+        args = self.context.args
+        client_config = self.client_config
+
         data_type = client_config.data_type
         data_partition_file_name = client_config.data_partition
         data_partition_index = client_config.data_partition_index
@@ -73,4 +80,23 @@ class Client:
             self.trainer.train_loader = train_loaders[data_partition_index]
             pass
         else:
-            raise ValueError(f'client_config.data_type={data_type} in not implemented by federation.client.get_data_loader()')
+            raise ValueError(f'client_config.data_type={data_type} is not implemented by federation.client.get_data_loader()')
+        
+    def run(self):
+        while True:
+            self.logger.log(f"Client {self.name} is staring a new round.")
+            server_state = api.get_server_state(self.context, expected_state=api.RoundState.COLLECT)
+            self.logger.log(f"Server state: {server_state.round_state}, round number: {server_state.round_number}, global feature hash: {server_state.feature_hash}")
+
+
+
+        
+if __name__ == "__main__":
+    from src.federation.context import new_client_context
+    context = new_client_context()
+    client = Client(context)
+    client.setup_data_loader(client.client_config)
+    client.run()
+
+
+    

@@ -1,10 +1,17 @@
 from typing import Dict, Optional
 from enum import Enum
 from datetime import datetime
+import time
 import copy
 import pickle
 import torch
 import hashlib
+import requests
+
+
+from context import Context
+
+url_prefix = '/cream-api/'
 
 class RoundState(Enum):
     BUSY = 1 # The server is busy processing the current round and calculating the next global model.
@@ -132,4 +139,45 @@ class GlobalFeature:
         fn = f"{path}/{hash}.pkl"
         with open(fn, 'rb') as f:
             return pickle.load(f)
-        
+
+def status_sleep(context, msg):
+    context.logger.log(f"{msg}, sleeping for 10 seconds.")
+    time.sleep(10)
+
+def error_sleep(context, error):
+    context.logger.log(f"Error: {error}, sleeping for 60 seconds.")
+    time.sleep(60)
+
+def get_server_state(context:Context, expected_state: Optional[RoundState] = None):
+    """
+    Get the current state of the server. 
+    If expected_state is not None, this function will wait until the server is in the expected state.
+    """
+    while True:
+        try:
+            url = context.fed_config.server.api_url
+            context.logger.log(f"Getting server state from {url}")
+            resp = requests.get(url)
+            state = ServerState.from_dict(resp.json()['current_state'])
+            if expected_state is not None and state.round_state != expected_state:
+                status_sleep(context, f"Server state is not {expected_state}")
+                time.sleep(10)
+                continue
+            return state
+        except Exception as e:
+            error_sleep(context, e)
+
+def get_global_feature(context:Context, state:ServerState):
+    """
+    Get the global feature from a distributed storage service.
+
+    Only mounted files are supported currently.
+    """
+    while True:
+        try:
+            url = context.fed_config.server.api_url + f"/global_feature/{hash}"
+            context.logger.log(f"Getting global feature from {url}")
+            resp = requests.get(url)
+            return GlobalFeature.load(context.fed_config.server.feature_path, hash)
+        except Exception as e:
+            error_sleep(context, e)

@@ -9,19 +9,17 @@ import api, config
 
 server = Flask(__name__)
 
-prefix = '/cream-api/'
+context = None # set by main
 
 current_state = api.ServerState()
 
-fed_config = config.parse_config('fed_config.yaml')
+url_prefix = api.url_prefix
 
-logger = PythonLogger()
-
-@server.route(f'{prefix}', methods=['GET'])
+@server.route(f'{url_prefix}', methods=['GET'])
 def get():
     return json.dumps({"current_state":current_state.to_dict()})
 
-@server.route(f'{prefix}/set_global', methods=['PUT'])
+@server.route(f'{url_prefix}/set_global', methods=['PUT'])
 def set_global():
      # ensure that the server is in a state update the global model.
     if current_state.round_state != api.RoundState.BUSY:
@@ -40,7 +38,7 @@ def set_global():
     current_state.update_feature_hash(new_feature_hash)
     return json.dumps({"status":"ok"})
 
-@server.route(f'{prefix}/add_client', methods=['PUT'])
+@server.route(f'{url_prefix}/add_client', methods=['PUT'])
 def add_client():
     # ensure that the server is in a state to accept clients models.
     if current_state.round_state == api.RoundState.BUSY:
@@ -56,16 +54,16 @@ def add_client():
 
     data = request.get_json()
     client = api.ClientState.from_dict(data)
-    # should also verify client auth on an untrusted network
-    if current_state.round_number != request.url:
-        current_state.add_client(client) 
-    if len(current_state.clients_reported) == fed_config.max_clients:
+    # should also verify client auth on an untrusted network.
+    if len(current_state.clients_reported) == context.fed_config.max_clients:
         current_state.round_state = api.RoundState.BUSY
-        logger.log(f"Global round {current_state.round_number} has collected the max number of clients.")
+        context.logger.log(f"Global round {current_state.round_number} has collected the max number of clients.")
 
     return json.dumps({"status":"ok"})
 
 if __name__ == '__main__':
+    from federation.context import new_server_context
+    context = new_server_context()
     server.run(debug=True, port=2323)
 
 
