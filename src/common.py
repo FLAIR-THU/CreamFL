@@ -1,4 +1,8 @@
-def add_args(parser argparse.ArgumentParser):
+import argparse
+import os
+
+
+def add_args(parser: argparse.ArgumentParser):
     parser.add_argument('--name', type=str, default='Test', help='The name for different experimental runs.')
     parser.add_argument('--exp_dir', type=str, default='./experiments/',
                         help='Locations to save different experimental runs.')
@@ -69,6 +73,8 @@ def add_args(parser argparse.ArgumentParser):
                         help='change data directory to ~/data_local')
 
     parser.add_argument('--not_bert', action='store_true', default=False, help="server bert, client not bert")
+
+    parser.add_argument('--fed_config', default='fed_config.yaml', help="federation network configuration file")
 
 def init_wandb(args):
     """

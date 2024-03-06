@@ -83,6 +83,17 @@ def get_FL_trainloader(dataset, data_root, num_clients, partition, alpha, batch_
     return loader_map, test_loader
 
 
+def data_partitioner_from_file(file_path, max_size):
+    net_dataidx_map = pickle.load(open(file_path, 'rb'))
+    return data_partitioner_apply_max_size(net_dataidx_map, max_size)
+
+def data_partitioner_apply_max_size(net_dataidx_map, max_size):
+    if max_size > 0:
+        for i in net_dataidx_map.keys():
+            if len(net_dataidx_map[i]) > max_size:
+                net_dataidx_map[i] = net_dataidx_map[i][:max_size]
+    return net_dataidx_map
+
 def data_partitioner(dataset, num_samples, num_nets, partition='homo', check_dir=None, alpha=0.5, y_train=None, max_size=0):
     check_dir = check_dir + f'client_{dataset}_{num_nets}_nets_{num_samples}_samples_{partition}_{alpha}.pkl'
 
@@ -121,11 +132,7 @@ def data_partitioner(dataset, num_samples, num_nets, partition='homo', check_dir
 
         pickle.dump(net_dataidx_map, open(check_dir, 'wb'))
 
-    if max_size > 0:
-        for i in net_dataidx_map.keys():
-            if len(net_dataidx_map[i]) > max_size:
-                net_dataidx_map[i] = net_dataidx_map[i][:max_size]
-    return net_dataidx_map
+    return data_partitioner_apply_max_size(net_dataidx_map, max_size)
 
 
 def get_dataloader(args):

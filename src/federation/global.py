@@ -29,14 +29,17 @@ from src.utils.config import parse_config
 from src.utils.load_datasets import prepare_coco_dataloaders
 from src.utils.logger import PythonLogger
 
+from config import load_config
+
 try:
     from apex import amp
 except ImportError:
     print('failed to import apex')
 
 class Global:
-    def __init__(self, args, wandb=None):
-        self.args = args
+    def __init__(self, args, fed_config wandb=None):
+        self.args = args # command line args
+        self.fed = fed_config # federation config file
         self.wandb = wandb
 
         self.device = None
@@ -47,7 +50,7 @@ class Global:
         # universal test dataloader
         self.test_loader = None
 
-        self.config = None
+        self.config = None #coco.yaml config file
         self.set_config()
 
         self.logger = PythonLogger(output_file=self.config.train.output_file)
