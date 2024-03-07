@@ -26,7 +26,6 @@ from src.utils.color_lib import RGBmean, RGBstdv
 from src.algorithms.eval_coco import COCOEvaluator
 from src.algorithms.retrieval_trainer import TrainerEngine, rawTrainerEngine
 from src.utils.config import parse_config
-from src.utils.load_datasets import prepare_coco_dataloaders
 from src.utils.logger import PythonLogger
 
 from config import load_config
@@ -42,6 +41,7 @@ class Global:
         # all configs
         self.context = context
 
+        self.config = context.config
         self.device = context.device
         self.logger = context.logger
         self.engine = None # set in load_dataset
@@ -63,17 +63,17 @@ class Global:
         self.engine = TrainerEngine()
         self.engine.set_logger(self.logger)
 
-        self.config.optimizer.learning_rate = self.args.server_lr
+        self.config.optimizer.learning_rate = args.server_lr
 
         self._dataloaders = self.dataloaders_global.copy()
         self.evaluator = COCOEvaluator(eval_method='matmul',
                                        verbose=True,
                                        eval_device='cuda',
                                        n_crossfolds=5)
-        self.engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local)
+        self.engine.create(self.config, self.vocab.word2idx, self.evaluator, args.mlp_local)
 
         self.train_eval_dataloader = self._dataloaders.pop(
-            'train_subset_eval' + f'_{self.args.pub_data_num}') if self._dataloaders is not None else None
+            'train_subset_eval' + f'_{args.pub_data_num}') if self._dataloaders is not None else None
 
         self.engine.model_to_device()
         torch.backends.cudnn.enabled = True
@@ -119,10 +119,9 @@ class Global:
 
         # submit global representation
         global_feature = api.GlobalFeature(self.global_img_feature, self.global_txt_feature, self.distill_index)
-        if not api.submit_global_feature(self.context, server_state, global_feature){
+        if not api.submit_global_feature(self.context, server_state, global_feature):
             self.logger.log("global train failed: failed to submit global feature")
             return False
-        }
 
         # waiting and retrieving local representations
         self.logger.log("Waiting for client representations")

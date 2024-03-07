@@ -47,12 +47,22 @@ plus a command server over http, and a global round computation provider.
 #### Command server
 
 ```bash
-python src/federation/server.py
+python src/federation/server.py --name test
 ```
 
 #### Global round computation provider
 
+```bash
+python src/federation/global.py --name test --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --max_size 64 --pub_data_num 2 --feature_dim 2 --not_bert
+```
+
 #### Clients
+
+Replace txt0 with the client to start.
+
+```bash
+python src/federation/client.py --name test --client_name txt_0 --max_size 64 --pub_data_num 2 --feature_dim 2 --not_bert
+```
 
 ### File sharing
 

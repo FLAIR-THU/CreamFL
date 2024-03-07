@@ -4,7 +4,7 @@ import yaml
 from yaml.error import YAMLError
 import copy
 
-def read_config_file(fn string):
+def read_config_file(fn: str):
     with open(fn, 'r') as fin:
         return yaml.safe_load(fin)
 

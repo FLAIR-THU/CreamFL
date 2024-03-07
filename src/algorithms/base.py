@@ -24,7 +24,7 @@ except ImportError:
     from eval_coco import COCOEvaluator
     from ..datasets._dataloader import prepare_f30k_dataloaders, load_vocab
 
-from utils.serialize_utils import torch_safe_load
+from ..utils.serialize_utils import torch_safe_load
 
 try:
     from apex import amp

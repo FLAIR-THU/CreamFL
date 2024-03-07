@@ -97,12 +97,16 @@ def prepare_coco_dataloaders(dataloader_config,
         image_root, val_ann, val_ids, vocab,
         num_workers=num_workers, batch_size=eval_batch_size,
         train=False,
+        #subset=True, #AttributeError: 'Subset' object has no attribute 'n_images'
+        #subset_num=subset_num
     )
 
     dataloaders['test'] = _get_coco_loader(
         image_root, val_ann, te_ids, vocab,
         num_workers=num_workers, batch_size=eval_batch_size if not tsne else 200,
         train=False,
+        #subset=True, #AttributeError: 'Subset' object has no attribute 'n_images'
+        #subset_num=subset_num
     )
 
     return dataloaders, vocab

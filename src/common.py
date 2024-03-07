@@ -1,7 +1,8 @@
 import argparse
 import os
 
-from utils.helper import Helper as helper
+from . utils.helper import Helper as helper
+from . utils.config import parse_config
 
 
 
@@ -132,6 +133,8 @@ def get_config(args, img='cifa100', txt='AG_NEWS'):
     else:
         config.model.not_bert = False
         config.model.cnn_type = 'resnet101'
+    
+    return config
 
 def prepare_args(description: str, script=None):
     parser = argparse.ArgumentParser(description=description)

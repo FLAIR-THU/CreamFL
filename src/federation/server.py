@@ -4,12 +4,17 @@ from http import HTTPStatus
 # external dependencies
 from flask import Flask, request
 # internal dependencies
+import sys
+sys.path.append("./")
+sys.path.append("../")
+sys.path.append("../../")
+sys.path.append("../../../")
 from src.utils.logger import PythonLogger
-import api, config
+import api, context
 
 server = Flask(__name__)
 
-context = None # set by main
+server_context = None # set by main
 
 current_state = api.ServerState()
 
@@ -55,15 +60,14 @@ def add_client():
     data = request.get_json()
     client = api.ClientState.from_dict(data)
     # should also verify client auth on an untrusted network.
-    if len(current_state.clients_reported) == context.fed_config.max_clients:
+    if len(current_state.clients_reported) == server_context.fed_config.max_clients:
         current_state.round_state = api.RoundState.BUSY
-        context.logger.log(f"Global round {current_state.round_number} has collected the max number of clients.")
+        server_context.logger.log(f"Global round {current_state.round_number} has collected the max number of clients.")
 
     return json.dumps({"status":"ok"})
 
 if __name__ == '__main__':
-    from federation.context import new_server_context
-    context = new_server_context()
+    server_context = context.new_server_context()
     server.run(debug=True, port=2323)
 
 

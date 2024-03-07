@@ -1,4 +1,4 @@
-from criterions.probemb import MCSoftContrastiveLoss
+from . probemb import MCSoftContrastiveLoss
 
 
 def get_criterion(criterion_name, config):

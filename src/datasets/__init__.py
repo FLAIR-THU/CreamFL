@@ -1,5 +1,5 @@
-from datasets._dataloader import prepare_coco_dataloaders, prepare_cub_dataloaders
-from datasets.vocab import Vocabulary
+from . _dataloader import prepare_coco_dataloaders, prepare_cub_dataloaders
+from . vocab import Vocabulary
 
 
 __all__ = [

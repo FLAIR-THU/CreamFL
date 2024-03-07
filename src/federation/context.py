@@ -1,5 +1,9 @@
-import torchconfig
-
+import torch
+import sys
+sys.path.append("./")
+sys.path.append("../")
+sys.path.append("../../")
+sys.path.append("../../../")
 from src.common import prepare_args, get_config
 from src.utils.logger import PythonLogger
 import config
@@ -31,7 +35,7 @@ class Context():
 
 
         # federation specific config file
-        self.fed_config = config.parse_config(args.fed_config)
+        self.fed_config = config.load_config(args.fed_config)
 
         # to be configured by client
         self.has_img_model = False
