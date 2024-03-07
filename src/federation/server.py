@@ -24,7 +24,7 @@ url_prefix = api.url_prefix
 def get():
     return json.dumps({"current_state":current_state.to_dict()})
 
-@server.route(f'{url_prefix}/set_global', methods=['PUT'])
+@server.route(f'{url_prefix}/set_global_feature', methods=['PUT'])
 def set_global():
      # ensure that the server is in a state update the global model.
     if current_state.round_state != api.RoundState.BUSY:

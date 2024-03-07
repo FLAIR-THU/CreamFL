@@ -13,7 +13,7 @@ from src.utils.load_datasets import prepare_coco_dataloaders
 
 from context import Context
 
-url_prefix = '/cream-api/'
+url_prefix = '/cream_api'
 
 class RoundState(Enum):
     BUSY = 1 # The server is busy processing the current round and calculating the next global model.
@@ -123,6 +123,7 @@ def feature_hash(data):
     return hashlib.sha3_256(data).hexdigest()
 
 def save(obj, path):
+    os.makedirs(path, exist_ok=True)
     data = pickle.dumps(obj)
     hash = feature_hash(data)
     fn = f"{path}/{hash}.pkl"
@@ -157,6 +158,9 @@ class GlobalFeature:
         obj.hash = hash
         return obj
     
+def get_api_url(context:Context):
+    return context.fed_config.server["api_url"]
+    
 def get_global_dataloader(context:Context):
     dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
     vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
@@ -178,7 +182,7 @@ def get_server_state(context:Context, expected_state: Optional[RoundState] = Non
     """
     while True:
         try:
-            url = context.fed_config.server.api_url
+            url = get_api_url(context)
             context.logger.log(f"Getting server state from {url}")
             resp = requests.get(url)
             state = ServerState.from_dict(resp.json()['current_state'])
@@ -217,7 +221,7 @@ def add_local_repr(context:Context, expected_server_state:ServerState, img, txt,
     if context.has_txt_model:
         _, client_state.txt_model_hash = save(txt, context.fed_config.feature_store)
 
-    url = context.fed_config.server.api_url + f'/add_client?round_number={expected_server_state.round_number}&feature_hash={expected_server_state.feature_hash}'
+    url = get_api_url(context)+ f'/add_client?round_number={expected_server_state.round_number}&feature_hash={expected_server_state.feature_hash}'
     context.logger.log(f"Submitting local representations to server.")
     while True:
         try:
@@ -234,7 +238,7 @@ def add_local_repr(context:Context, expected_server_state:ServerState, img, txt,
 # start server api section
 def submit_global_feature(context:Context, state:ServerState, global_feature:GlobalFeature):
     _, hash = global_feature.save(context.fed_config.feature_store)
-    url = context.fed_config.server.api_url + f'/submit_global_feature?round_number={state.round_number}&old_feature_hash={state.feature_hash}&new_feature_hash={hash}'
+    url = get_api_url(context) + f'/set_global_feature?round_number={state.round_number}&old_feature_hash={state.feature_hash}&new_feature_hash={hash}'
     context.logger.log(f"Submitting global feature to server.")
     while True:
         try:
@@ -243,6 +247,7 @@ def submit_global_feature(context:Context, state:ServerState, global_feature:Glo
                 context.logger.log(f"Global feature submitted to server.")
                 return True
             context.logger.log(f"Can not submit global feature to server. Status code: {resp.status_code} body: {resp.text}")
+            error_sleep(context, resp.status_code)
             return False
         except Exception as e:
             error_sleep(context, e)

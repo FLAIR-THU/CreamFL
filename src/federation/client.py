@@ -6,6 +6,7 @@ import os
 from copy import deepcopy
 import sys
 
+import munch
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical
@@ -38,15 +39,23 @@ class Client:
     def __init__(self, context):
         # all configs
         self.context = context
+        self.logger = context.logger
+        self.args = context.args
+        self.wandb = context.wandb
 
         # validation for clients
         if context.args.client_name is None:
             raise ValueError("The client_name argument is required for clients")
-        if context.args.client_name not in context.fed_config.clients:
+        
+        my_client = None
+        for client in context.fed_config.clients:
+            if client["name"] == context.args.client_name:
+                my_client = munch.Munch(client)
+        if my_client is None:
             raise ValueError(f"Client name {context.args.client_name} not found in configuration file {context.args.fed_config}")
 
         # setup client
-        self.client_config = context.fed_config.clients[context.args.client_name]
+        self.client_config = my_client
         self.name = context.args.client_name
         self.device = context.device
 

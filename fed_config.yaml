@@ -5,7 +5,7 @@ feature_store: "/tmp/cream_api" # the path to the feature store where client and
 
 # server configuration
 server:
-  api_url: "localhost:2323/cream_api"
+  api_url: "http://localhost:2323/cream_api"
   min_clients: 2 # the number of required clients reporting to start global distillation.
   max_clients: 2 # the number of clients reached to start global distillation immediately.
   wait_duration: 10m # the duration to wait for clients to report before starting global distillation.

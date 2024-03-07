@@ -40,7 +40,7 @@ class Global:
     def __init__(self, context):
         # all configs
         self.context = context
-
+        self.args = context.args
         self.config = context.config
         self.device = context.device
         self.logger = context.logger
@@ -121,17 +121,17 @@ class Global:
         global_feature = api.GlobalFeature(self.global_img_feature, self.global_txt_feature, self.distill_index)
         if not api.submit_global_feature(self.context, server_state, global_feature):
             self.logger.log("global train failed: failed to submit global feature")
-            return False
+            return server_state, False
 
         # waiting and retrieving local representations
         self.logger.log("Waiting for client representations")
         new_server_state = api.get_server_state(self.context, expected_state=api.RoundState.BUSY)
         if new_server_state.round_number != server_state.round_number + 1:
             self.logger.log(f"global train failed: round number mismatch: {new_server_state.round_number} != {server_state.round_number}")
-            return False
+            return new_server_state, False
         if new_server_state.feature_hash != global_feature.hash:
             self.logger.log(f"global train failed: feature hash mismatch: {new_server_state.feature_hash} != {global_feature.hash}")
-            return False
+            return new_server_state, False
         img_vec, txt_vec = api.get_clients_repr(self.context, new_server_state.clients_reported)
         self.logger.log(f"loaded client representations: img_vec x{len(img_vec)}, txt_vec x{len(txt_vec)}")
 
@@ -177,6 +177,7 @@ class Global:
 
         del img_vec, txt_vec
         gc.collect()
+        return new_server_state, True
 
     def distill(self, round_n, img_vec, txt_vec, distill_index):
 
@@ -289,4 +290,10 @@ if __name__ == "__main__":
     context = new_global_context()
     global_compute = Global(context)
     global_compute.load_dataset()
+    server_state = api.ServerState()
+    while server_state.round_number < context.args.comm_rounds:
+        new_server_state, ok = global_compute.train(server_state)
+        if not ok:
+            context.logger.log(f"global compute failed:{server_state}")
+    context.logger.log(f"global compute finished:{server_state}")
     
