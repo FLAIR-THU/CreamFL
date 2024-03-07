@@ -237,6 +237,7 @@ def add_local_repr(context:Context, expected_server_state:ServerState, img, txt,
             
 # start server api section
 def submit_global_feature(context:Context, state:ServerState, global_feature:GlobalFeature):
+    context.logger.log(f"Saving global feature to file.")
     _, hash = global_feature.save(context.fed_config.feature_store)
     url = get_api_url(context) + f'/set_global_feature?round_number={state.round_number}&old_feature_hash={state.feature_hash}&new_feature_hash={hash}'
     context.logger.log(f"Submitting global feature to server.")
