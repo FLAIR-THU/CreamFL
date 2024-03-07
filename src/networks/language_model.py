@@ -77,6 +77,7 @@ class EncoderText(nn.Module):
             assert wemb.vectors.shape[1] == word_dim, f'wemb.vectors.shape {wemb.vectors.shape}'
 
             # quick-and-dirty trick to improve word-hit rate
+            print(f'improving word-hit rate')
             missing_words = []
             for word, idx in word2idx.items():
                 if word not in wemb.stoi:

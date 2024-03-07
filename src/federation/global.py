@@ -290,10 +290,10 @@ if __name__ == "__main__":
     context = new_global_context()
     global_compute = Global(context)
     global_compute.load_dataset()
-    server_state = api.ServerState()
+    server_state = api.get_server_state(context, api.RoundState.BUSY)
     while server_state.round_number < context.args.comm_rounds:
         new_server_state, ok = global_compute.train(server_state)
         if not ok:
-            context.logger.log(f"global compute failed:{server_state}")
-    context.logger.log(f"global compute finished:{server_state}")
+            context.logger.log(f"global compute failed:{server_state.to_dict()}")
+    context.logger.log(f"global compute finished:{server_state.to_dict()}")
     

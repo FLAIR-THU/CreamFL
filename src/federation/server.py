@@ -32,7 +32,7 @@ def set_global():
     # ensure that we are submitting to the correct round.
     round_number = request.args.get('round_number', default=-1)
     if round_number != current_state.round_number:
-        return json.dumps({"status":"error", "message":"The round has passed"}), HTTPStatus.CONFLICT
+        return json.dumps({"status":"error", "message":"The round has passed. expected={current_state.round_number}, got={round_number}"}), HTTPStatus.CONFLICT
     # ensure that the global model is identical to the one the client used. This should always be true considering the round number is already checked.
     old_feature_hash = request.args.get('old_feature_hash', default="")
     if old_feature_hash != current_state.feature_hash:
