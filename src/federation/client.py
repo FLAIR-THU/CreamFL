@@ -45,15 +45,27 @@ class Client:
         if context.args.client_name not in context.fed_config.clients:
             raise ValueError(f"Client name {context.args.client_name} not found in configuration file {context.args.fed_config}")
 
-        # commonly accessed configs
+        # setup client
         self.client_config = context.fed_config.clients[context.args.client_name]
         self.name = context.args.client_name
         self.device = context.device
 
+        if self.client_config.data_type == 'txt':
+            self.context.has_img_model = False
+            self.context.has_txt_model = True
+        else:
+            raise ValueError(f'client_config.data_type={self.client_config.data_type} is not implemented by federation.client.Client')
+
         # will setup in setup_data_loader
-        self.client_trainer = None
- 
+        self.trainer = None
+
     def setup_data_loader(self):
+
+        self.logger.log('setup global dataloader')
+
+        global_dataloader, _ = api.get_global_dataloader(self.context)
+        self.global_eval_dataloader = global_dataloader['train_subset_eval' + f'_{self.args.pub_data_num}']
+
         self.logger.log('start creating model and partition datasets')
 
         os.makedirs(os.environ['HOME'] + f'/data/yClient', exist_ok=True)
@@ -82,22 +94,39 @@ class Client:
         else:
             raise ValueError(f'client_config.data_type={data_type} is not implemented by federation.client.get_data_loader()')
         
+    def train(self, gf: api.GlobalFeature):
+        trainer = self.trainer
+        self.logger.log(f"Training Client {self.name}, idx: {trainer.client_idx}")
+        trainer.run(gf.img, gf.txt, gf.distill_index, self.global_eval_dataloader)
+        self.logger.log(f"client {self.name} Generate Local Representations")
+        vec, di = trainer.generate_logits(self.global_eval_dataloader)
+        if di != gf.distill_index:
+            raise ValueError(f"distill_index mismatch: {di} != {gf.distill_index}")
+        img = vec.get('img')
+        txt = vec.get('txt')
+        return img, txt
+
+    def submit(self, local_repr: api.ClientState):
+        self.logger.log(f"Submitting local representations to server.")
+        api.submit_local_repr(self.context, local_repr)
+ 
     def run(self):
         while True:
             self.logger.log(f"Client {self.name} is starting a new round.")
             server_state = api.get_server_state(self.context, expected_state=api.RoundState.COLLECT)
             self.logger.log(f"Server state: {server_state.round_state}, round number: {server_state.round_number}, global feature hash: {server_state.feature_hash}")
             global_feature = api.get_global_feature(self.context, server_state)
-            self.logger.log(f"Global feature retrieved. Shape: {global_feature.shape}")
-
-
-
+            self.logger.log(f"Global feature retrieved")
+            img, txt = self.train(global_feature)
+            del global_feature
+            api.add_local_repr(self.context, server_state, img, txt, self.trainer.local_rounds)
+            del img, txt
         
 if __name__ == "__main__":
     from src.federation.context import new_client_context
     context = new_client_context()
     client = Client(context)
-    client.setup_data_loader(client.client_config)
+    client.setup_data_loader()
     client.run()
 
 

@@ -15,6 +15,7 @@
         "Multimodal",
         "PCME",
         "Qiying",
+        "rsum",
         "svhn",
         "tqdm",
         "trainloader",

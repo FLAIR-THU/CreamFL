@@ -30,6 +30,7 @@ from src.utils.load_datasets import prepare_coco_dataloaders
 from src.utils.logger import PythonLogger
 
 from config import load_config
+import api
 
 try:
     from apex import amp
@@ -37,51 +38,27 @@ except ImportError:
     print('failed to import apex')
 
 class Global:
-    def __init__(self, args, fed_config wandb=None):
-        self.args = args # command line args
-        self.fed = fed_config # federation config file
-        self.wandb = wandb
+    def __init__(self, context):
+        # all configs
+        self.context = context
 
-        self.device = None
-        self.engine = None
+        self.device = context.device
+        self.logger = context.logger
+        self.engine = None # set in load_dataset
 
         # coco global dataloaders
         self.dataloaders_global = None
         # universal test dataloader
         self.test_loader = None
 
-        self.config = None #coco.yaml config file
-        self.set_config()
-
-        self.logger = PythonLogger(output_file=self.config.train.output_file)
-
         self.img_vec, self.txt_vec = None, None
         self.global_img_feature = None
         self.global_txt_feature = None
         self.distill_index = None
 
-    def set_config(self):
-        self.config = parse_config("./src/coco.yaml", strict_cast=False)
-        self.config.train.model_save_path = 'model_last_no_prob'
-        self.config.train.best_model_save_path = 'model_best_no_prob'
-        self.config.train.output_file = 'model_noprob'
-        self.config.train.model_save_path = self.config.train.model_save_path + '.pth'
-        self.config.train.best_model_save_path = self.config.train.best_model_save_path + '.pth'
-        self.config.train.output_file = self.config.train.output_file + '.log'
-
-        self.config.model.embed_dim = self.args.feature_dim  # set global model dim
-
-        if self.args.not_bert:
-            self.config.model.not_bert = True
-            self.config.model.cnn_type = 'resnet50'
-        else:
-            self.config.model.not_bert = False
-            self.config.model.cnn_type = 'resnet101'
-
-    def load_dataset(self, args):
-        dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
-        vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
-        self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, args.pub_data_num, args.max_size, vocab_path)
+    def load_dataset(self):
+        args = self.context.args
+        self.dataloaders_global, self.vocab = api.get_global_dataloader(self.context)
 
         self.engine = TrainerEngine()
         self.engine.set_logger(self.logger)
@@ -104,15 +81,13 @@ class Global:
             self.engine.logger.log('Train with half precision')
             self.engine.to_half()
 
-    def train(self, round_n):
-        self.cur_epoch = round_n
+    def train(self, server_state: api.ServerState):
+        
+        self.logger.log(f"Global training round {server_state.round_number}!")
+        self.engine.train(
+            tr_loader=self._dataloaders['train_subset' + f'_{self.args.pub_data_num}'])  # global train
 
-        if not is_test:
-            self.logger.log(f"Global training round {round_n + 1}!")
-            self.engine.train(
-                tr_loader=self._dataloaders['train_subset' + f'_{self.args.pub_data_num}'])  # global train
-
-        # global representations
+        # calculate global representation
         if self.args.agg_method == "con_w" or self.args.contrast_local_intra or self.args.contrast_local_inter:
             img_feature, txt_feature = [], []
             distill_index = []
@@ -142,40 +117,34 @@ class Global:
             del img_feature, txt_feature
             gc.collect()
 
+        # submit global representation
+        global_feature = api.GlobalFeature(self.global_img_feature, self.global_txt_feature, self.distill_index)
+        if not api.submit_global_feature(self.context, server_state, global_feature){
+            self.logger.log("global train failed: failed to submit global feature")
+            return False
+        }
+
         # waiting and retrieving local representations
-        img_vec, img_num = [], []
-        txt_vec, txt_num = [], []
-        for idx, trainer in enumerate(self.cur_trainers):
-            self.logger.log(f"Training Client {trainer.client_idx}!")
-            trainer.cur_epoch = round_n
-            trainer.run(self.global_img_feature, self.global_txt_feature, self.distill_index,
-                        self._dataloaders['train_subset' + f'_{self.args.pub_data_num}'])
-            self.logger.log("Download Local Representations")
-            _vec, i = trainer.generate_logits(
-                self.dataloaders_global[
-                    'train_subset_eval' + f'_{self.args.pub_data_num}'])  # {'img': img_vec, 'txt': txt_vec}
-            # if not is_test:
-            if self.distill_index is None:
-                self.distill_index = i
-            elif self.distill_index is not None:
-                assert i == self.distill_index
-            if _vec['img'] is not None:
-                img_vec.append(_vec['img'])
-                img_num.append(len(trainer.train_loader.dataset))
-                print(f'img_vec {_vec["img"].shape}')
-            if _vec['txt'] is not None:
-                txt_vec.append(_vec['txt'])
-                txt_num.append(len(trainer.train_loader.dataset))
-                print(f'txt_vec {_vec["txt"].shape}')
+        self.logger.log("Waiting for client representations")
+        new_server_state = api.get_server_state(self.context, expected_state=api.RoundState.BUSY)
+        if new_server_state.round_number != server_state.round_number + 1:
+            self.logger.log(f"global train failed: round number mismatch: {new_server_state.round_number} != {server_state.round_number}")
+            return False
+        if new_server_state.feature_hash != global_feature.hash:
+            self.logger.log(f"global train failed: feature hash mismatch: {new_server_state.feature_hash} != {global_feature.hash}")
+            return False
+        img_vec, txt_vec = api.get_clients_repr(self.context, new_server_state.clients_reported)
+        self.logger.log(f"loaded client representations: img_vec x{len(img_vec)}, txt_vec x{len(txt_vec)}")
 
         # global distillation
         if not self.args.disable_distill:
-            self.distill(round_n, img_vec, txt_vec, img_num, txt_num, self.distill_index)
+            self.distill(new_server_state.round_number, img_vec, txt_vec, self.distill_index)
 
         def get_lr(optimizer):
             for param_group in optimizer.param_groups:
                 return param_group['lr']
 
+        round_n = server_state.round_number
         # record after each epoch training
         metadata = self.engine.metadata.copy()
         metadata['cur_epoch'] = round_n + 1
@@ -210,7 +179,10 @@ class Global:
         del img_vec, txt_vec
         gc.collect()
 
-    def distill(self, round_n, img_vec, txt_vec, img_num, txt_num, distill_index):
+    def distill(self, round_n, img_vec, txt_vec, distill_index):
+
+        has_img_vec = len(img_vec) > 0
+        has_txt_vec = len(txt_vec) > 0
 
         self.engine.model.train()
 
@@ -281,17 +253,17 @@ class Global:
 
                 return client_loss_cri(output, target.type_as(output))
 
-            if self.args.num_img_clients > 0 and len(img_num)> 0:
+            if has_img_vec:
                 out_img = output['image_features']
                 d_idx = operator.itemgetter(*index)(distill_dict)  # idx of the current batch
                 target_img = self.img_vec[d_idx, :].type_as(out_img)
                 loss += self.args.kd_weight * code_sim(out_img, target_img, self.config)
-            if self.args.num_txt_clients > 0 and len(txt_num) > 0:
+            if has_txt_vec:
                 out_txt = output['caption_features']
                 d_idx = operator.itemgetter(*index)(distill_dict)  # idx of the current batch
                 target_txt = self.txt_vec[d_idx, :].type_as(out_txt)
                 loss += self.args.kd_weight * code_sim(out_txt, target_txt, self.config)
-            if self.args.num_mm_clients > 0 and len(img_num) > 0 and len(txt_num) > 0:
+            if has_img_vec and has_txt_vec:
                 out_img = output['image_features']
                 d_idx = operator.itemgetter(*index)(distill_dict)  # idx of the current batch
                 target_img = self.img_vec[d_idx, :].type_as(out_img)
@@ -312,3 +284,10 @@ class Global:
                 nn.utils.clip_grad.clip_grad_norm_(self.engine.model.parameters(),
                                                    self.config.train.grad_clip)
             self.engine.optimizer.step()
+
+if __name__ == "__main__":
+    from src.federation.context import new_global_context
+    context = new_global_context()
+    global_compute = Global(context)
+    global_compute.load_dataset()
+    

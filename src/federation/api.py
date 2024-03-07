@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 from enum import Enum
 from datetime import datetime
+import os
 import time
 import copy
 import pickle
@@ -8,6 +9,7 @@ import torch
 import hashlib
 import requests
 
+from src.utils.load_datasets import prepare_coco_dataloaders
 
 from context import Context
 
@@ -120,28 +122,45 @@ class ServerState:
 def feature_hash(data):
     return hashlib.sha3_256(data).hexdigest()
 
+def save(obj, path):
+    data = pickle.dumps(obj)
+    hash = feature_hash(data)
+    fn = f"{path}/{hash}.pkl"
+    with open(fn, 'wb') as f:
+            f.write(data)
+    return fn, hash
+
+def load(cls, path, hash):
+    fn = f"{path}/{hash}.pkl"
+    with open(fn, 'rb') as f:
+        obj = pickle.load(f)
+    if not isinstance(obj, cls):
+        raise ValueError(f"Object loaded from {fn} is not an instance of {cls}")
+    return obj
+
+
 class GlobalFeature:
     def __init__(self, img: torch.Tensor, txt: torch.Tensor, distill_index: list):
         self.img: torch.Tensor = img
         self.txt: torch.Tensor = txt
         self.distill_index = distill_index
+        self.hash = None # calculated when saved to or loaded from disk
 
     def save(self, path):
-        data = pickle.dumps(self)
-        hash = feature_hash(data)
-        fn = f"{path}/{hash}.pkl"
-        with open(fn, 'wb') as f:
-            f.write(data)
+        fn, hash = save(self, path)
+        self.hash = hash
         return fn, hash
     
     @classmethod
     def load(cls, path, hash):
-        fn = f"{path}/{hash}.pkl"
-        with open(fn, 'rb') as f:
-            obj = pickle.load(f)
-        if not isinstance(obj, cls):
-            raise ValueError(f"Object loaded from {fn} is not an instance of GlobalFeature")
+        obj = load(cls, path, hash)
+        obj.hash = hash
         return obj
+    
+def get_global_dataloader(context:Context):
+    dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
+    vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
+    return prepare_coco_dataloaders(context.config.dataloader, dataset_root, context.args.pub_data_num, context.args.max_size, vocab_path)
 
 def status_sleep(context, msg):
     context.logger.log(f"{msg}, sleeping for 10 seconds.")
@@ -151,6 +170,7 @@ def error_sleep(context, error):
     context.logger.log(f"Error: {error}, sleeping for 60 seconds.")
     time.sleep(60)
 
+# start shared api section
 def get_server_state(context:Context, expected_state: Optional[RoundState] = None):
     """
     Get the current state of the server. 
@@ -170,12 +190,73 @@ def get_server_state(context:Context, expected_state: Optional[RoundState] = Non
         except Exception as e:
             error_sleep(context, e)
 
+# start client api section
+
 
 def get_global_feature(context:Context, state:ServerState):
     """
     Get the global feature from a distributed storage service.
 
     Only mounted files are supported currently.
-
     """
     return GlobalFeature.load(context.fed_config.feature_store, state.feature_hash)
+
+def add_local_repr(context:Context, expected_server_state:ServerState, img, txt, local_rounds:int):
+    """
+    Submit the local representations to the server.
+
+    local_rounds is the number of local rounds that the client has trained the model for, this is only used for reporting.
+    
+    Returns True if the submission was successful and the client should restart a new round.
+    Returns False if the submission was not successful but the client should restart a new round.
+    """
+    context.logger.log(f"Saving local representations.")
+    client_state = ClientState(name=context.args.client_name, img_model=context.has_img_model, txt_model=context.has_txt_model, local_rounds=local_rounds)
+    if context.has_img_model:
+        _, client_state.img_model_hash = save(img, context.fed_config.feature_store)
+    if context.has_txt_model:
+        _, client_state.txt_model_hash = save(txt, context.fed_config.feature_store)
+
+    url = context.fed_config.server.api_url + f'/add_client?round_number={expected_server_state.round_number}&feature_hash={expected_server_state.feature_hash}'
+    context.logger.log(f"Submitting local representations to server.")
+    while True:
+        try:
+            resp = requests.put(url, json=client_state.to_dict())
+            if resp.status_code == 200:
+                context.logger.log(f"Local representations submitted to server.")
+                return True
+            context.logger.log(f"Can not add local representations to server. Status code: {resp.status_code} body: {resp.text}")
+            return False
+        except Exception as e:
+            error_sleep(context, e)
+# end client api section
+            
+# start server api section
+def submit_global_feature(context:Context, state:ServerState, global_feature:GlobalFeature):
+    _, hash = global_feature.save(context.fed_config.feature_store)
+    url = context.fed_config.server.api_url + f'/submit_global_feature?round_number={state.round_number}&old_feature_hash={state.feature_hash}&new_feature_hash={hash}'
+    context.logger.log(f"Submitting global feature to server.")
+    while True:
+        try:
+            resp = requests.put(url)
+            if resp.status_code == 200:
+                context.logger.log(f"Global feature submitted to server.")
+                return True
+            context.logger.log(f"Can not submit global feature to server. Status code: {resp.status_code} body: {resp.text}")
+            return False
+        except Exception as e:
+            error_sleep(context, e)
+
+def get_clients_repr(context:Context, clients_reported: Dict[str, ClientState]):
+    img_vec = []
+    txt_vec = []
+    for name, client in clients_reported.items():
+        if client.img_model:
+            img = load(torch.Tensor,context.fed_config.feature_store, client.img_model_hash)
+            img_vec.append(img)
+        if client.txt_model:
+            txt = load(torch.Tensor,context.fed_config.feature_store, client.txt_model_hash)
+            txt_vec.append(txt)
+    return img_vec, txt_vec
+    
+# end server api section

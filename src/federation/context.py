@@ -1,6 +1,6 @@
-import torch
+import torchconfig
 
-from src.common import prepare_args
+from src.common import prepare_args, get_config
 from src.utils.logger import PythonLogger
 import config
 
@@ -20,7 +20,8 @@ class Context():
         self.wandb = wandb
 
         # from MMFL
-        self.logger = PythonLogger() # TODO: output_file=self.config.train.output_file
+        self.config = get_config(args)
+        self.logger = PythonLogger(output_file=self.config.train.output_file)
 
         # automatically set device
         if torch.cuda.is_available():
@@ -32,6 +33,9 @@ class Context():
         # federation specific config file
         self.fed_config = config.parse_config(args.fed_config)
 
+        # to be configured by client
+        self.has_img_model = False
+        self.has_txt_model = False
 
 
 def new_server_context():
@@ -41,4 +45,7 @@ def new_client_context():
     return Context(description="CreamFL Federated Learning (client)", script="client")
 
 def new_global_context():
-    return Context(description="CreamFL Federated Learning (global compute)", script="global")
+    c = Context(description="CreamFL Federated Learning (global compute)", script="global")
+    c.has_img_model = True
+    c.has_txt_model = True
+    return c

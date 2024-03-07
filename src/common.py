@@ -113,6 +113,26 @@ def init_wandb(args, script=None):
 
     return wandb
 
+def get_config(args, img='cifa100', txt='AG_NEWS'):
+    config = parse_config("./src/coco.yaml", strict_cast=False)
+    config.train.model_save_path = 'model_last_no_prob'
+    config.train.best_model_save_path = 'model_best_no_prob'
+    config.train.output_file = 'model_noprob'
+    config.model.img_client = img
+    config.model.txt_client = txt
+    config.train.model_save_path = config.train.model_save_path + '.pth'
+    config.train.best_model_save_path = config.train.best_model_save_path + '.pth'
+    config.train.output_file = config.train.output_file + '.log'
+
+    config.model.embed_dim = args.feature_dim  # set global model dim
+
+    if args.not_bert:
+        config.model.not_bert = True
+        config.model.cnn_type = 'resnet50'
+    else:
+        config.model.not_bert = False
+        config.model.cnn_type = 'resnet101'
+
 def prepare_args(description: str, script=None):
     parser = argparse.ArgumentParser(description=description)
     add_args(parser)
