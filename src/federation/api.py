@@ -58,7 +58,7 @@ class ClientState:
             name=data['name'],
             img_model=data.get('img_model', False),
             txt_model=data.get('txt_model', False),
-            round_number=data['local_rounds'],
+            local_rounds=data['local_rounds'],
             img_model_hash=data.get('img_model_hash', ''),
             txt_model_hash=data.get('txt_model_hash', ''),
         )

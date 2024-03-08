@@ -670,5 +670,5 @@ class ClientTrainer:
                                                     opt_level='O2')
 
     def __getattr__(self, k):
-        if k.startwith("__"):
+        if k.startswith("__"):
             raise AttributeError

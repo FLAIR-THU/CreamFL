@@ -31,8 +31,8 @@ def set_global():
         return json.dumps({"status":"error", "message":"The server should not update the global model at this time."}), HTTPStatus.CONFLICT
     # ensure that we are submitting to the correct round.
     round_number = request.args.get('round_number', default=-1)
-    if round_number != current_state.round_number:
-        return json.dumps({"status":"error", "message":"The round has passed. expected={current_state.round_number}, got={round_number}"}), HTTPStatus.CONFLICT
+    if round_number != str(current_state.round_number):
+        return json.dumps({"status":"error", "message":f"The round has passed. expected={current_state.round_number}, got={round_number}"}), HTTPStatus.CONFLICT
     # ensure that the global model is identical to the one the client used. This should always be true considering the round number is already checked.
     old_feature_hash = request.args.get('old_feature_hash', default="")
     if old_feature_hash != current_state.feature_hash:
@@ -50,8 +50,8 @@ def add_client():
         return json.dumps({"status":"error", "message":"The server is not accepting clients at this time."}), HTTPStatus.CONFLICT
     # ensure that we are submitting to the correct round.
     round_number = request.args.get('round_number', default=-1)
-    if round_number != current_state.round_number:
-        return json.dumps({"status":"error", "message":"The round has passed"}), HTTPStatus.CONFLICT
+    if round_number != str(current_state.round_number):
+        return json.dumps({"status":"error", "message":f"The round has passed. expected={current_state.round_number}, got={round_number}"}), HTTPStatus.CONFLICT
     # ensure that the global model is identical to the one the client used. This should always be true considering the round number is already checked.
     feature_hash = request.args.get('feature_hash', default="")
     if feature_hash != current_state.feature_hash:
@@ -60,7 +60,8 @@ def add_client():
     data = request.get_json()
     client = api.ClientState.from_dict(data)
     # should also verify client auth on an untrusted network.
-    if len(current_state.clients_reported) == server_context.fed_config.max_clients:
+    current_state.clients_reported[client.name] = client
+    if len(current_state.clients_reported) == server_context.fed_config.server['max_clients']:
         current_state.round_state = api.RoundState.BUSY
         server_context.logger.log(f"Global round {current_state.round_number} has collected the max number of clients.")
 

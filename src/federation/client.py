@@ -105,7 +105,7 @@ class Client:
         
     def train(self, gf: api.GlobalFeature):
         trainer = self.trainer
-        self.logger.log(f"Training Client {self.name}, idx: {trainer.client_idx}")
+        self.logger.log(f"Training Client {self.name}")
         trainer.run(gf.img, gf.txt, gf.distill_index, self.global_eval_dataloader)
         self.logger.log(f"client {self.name} Generate Local Representations")
         vec, di = trainer.generate_logits(self.global_eval_dataloader)
