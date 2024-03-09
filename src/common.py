@@ -1,8 +1,8 @@
 import argparse
 import os
 
-from . utils.helper import Helper as helper
-from . utils.config import parse_config
+from src.utils.helper import Helper as helper
+from src.utils.config import parse_config
 
 
 

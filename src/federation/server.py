@@ -34,9 +34,9 @@ def set_global():
     if round_number != str(current_state.round_number):
         return json.dumps({"status":"error", "message":f"The round has passed. expected={current_state.round_number}, got={round_number}"}), HTTPStatus.CONFLICT
     # ensure that the global model is identical to the one the client used. This should always be true considering the round number is already checked.
-    old_feature_hash = request.args.get('old_feature_hash', default="")
+    old_feature_hash = request.args.get('old_feature_hash', default="missing")
     if old_feature_hash != current_state.feature_hash:
-        return json.dumps({"status":"error", "message":"The global model has changed"}), HTTPStatus.CONFLICT
+        return json.dumps({"status":"error", "message":f"The global model has changed {old_feature_hash}!={current_state.feature_hash}"}), HTTPStatus.CONFLICT
     new_feature_hash = request.args.get('new_feature_hash', default="")
     if new_feature_hash == "":
         return json.dumps({"status":"error", "message":"The new feature hash is required"}), HTTPStatus.BAD_REQUEST
@@ -62,7 +62,7 @@ def add_client():
     # should also verify client auth on an untrusted network.
     current_state.clients_reported[client.name] = client
     if len(current_state.clients_reported) == server_context.fed_config.server['max_clients']:
-        current_state.round_state = api.RoundState.BUSY
+        current_state.advance_round()
         server_context.logger.log(f"Global round {current_state.round_number} has collected the max number of clients.")
 
     return json.dumps({"status":"ok"})

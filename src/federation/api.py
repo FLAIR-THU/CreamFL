@@ -67,7 +67,7 @@ class ServerState:
     def __init__(self, 
              round_number: int = 0, # defaults are for the starting state of a new server
              round_state: RoundState = RoundState.BUSY,
-             round_started_at: Optional[datetime] = None, # the timestamp of the start of the round
+             round_started_at: datetime = datetime.now(), # the timestamp of the start of the round
              clients_reported: Optional[Dict[str, ClientState]] = None, # map of names to ClientState that have reported their updates
              feature_hash: str = ""):
         self.round_number = round_number
@@ -104,7 +104,7 @@ class ServerState:
         return {
             'round_number': self.round_number,
             'round_state': self.round_state.value,
-            'round_started_at': self.round_started_at,
+            'round_started_at': self.round_started_at.isoformat(),
             'clients_reported': {k: v.to_dict() for k, v in self.clients_reported.items()},
             'feature_hash': self.feature_hash,
         }
@@ -114,7 +114,7 @@ class ServerState:
         return cls(
             round_number=data['round_number'],
             round_state=RoundState(data['round_state']),
-            round_started_at=data['round_started_at'],
+            round_started_at= datetime.fromisoformat(data['round_started_at']),
             clients_reported={k: ClientState.from_dict(v) for k, v in data['clients_reported'].items()},
             feature_hash=data['feature_hash'],
         )

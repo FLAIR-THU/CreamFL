@@ -44,7 +44,9 @@ class Global:
         self.config = context.config
         self.device = context.device
         self.logger = context.logger
+        self.wandb = context.wandb
         self.engine = None # set in load_dataset
+        self.best_score = 0
 
         # coco global dataloaders
         self.dataloaders_global = None
@@ -156,11 +158,11 @@ class Global:
                                   prefix=self.engine.eval_prefix)
         rsum = test_scores['test']['n_fold']['i2t']['recall_1'] + test_scores['test']['n_fold']['t2i']['recall_1'] + \
                test_scores['test']['i2t']['recall_1'] + test_scores['test']['t2i']['recall_1']
-        self.wandb.log({"Server rsum_r1": rsum}, step=self.cur_epoch)
-        self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=self.cur_epoch)
-        self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=self.cur_epoch)
-        self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=self.cur_epoch)
-        self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=self.cur_epoch)
+        self.wandb.log({"Server rsum_r1": rsum}, step=round_n)
+        self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=round_n)
+        self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=round_n)
+        self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=round_n)
+        self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=round_n)
 
         if self.best_score < rsum:
             best_score = rsum
@@ -290,10 +292,15 @@ if __name__ == "__main__":
     context = new_global_context()
     global_compute = Global(context)
     global_compute.load_dataset()
-    server_state = api.get_server_state(context, api.RoundState.BUSY)
+    server_state = api.get_server_state(context)
     while server_state.round_number < context.args.comm_rounds:
-        new_server_state, ok = global_compute.train(server_state)
+        server_state, ok = global_compute.train(server_state)
         if not ok:
             context.logger.log(f"global compute failed:{server_state.to_dict()}")
     context.logger.log(f"global compute finished:{server_state.to_dict()}")
+    global_compute.logger.log("Best:")
+    global_compute.engine.report_scores(step=context.args.comm_rounds,
+                              scores=global_compute.best_scores,
+                              metadata=global_compute.best_metadata,
+                              prefix=global_compute.engine.eval_prefix)
     

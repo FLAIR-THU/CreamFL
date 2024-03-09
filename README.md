@@ -71,6 +71,25 @@ a CDN, or shared network storage, ex.  Directly accessing the same files is the
 easies to implement and easily extends to shared network storage, so this is implemented
 first for easy of local testing without lose of generality.
 
+## Prove of Concept
+
+### local simulation
+
+```bash
+python src/main.py --name poc --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --max_size 10000 --pub_data_num 4000 --feature_dim 64 --num_img_clients 0 --num_txt_clients 1 --num_mm_clients 0 --client_num_per_round 1 --local_epochs 1 --comm_rounds 4 --not_bert
+```
+
+results:
+https://wandb.ai/xiegeo/CreamFL/runs/mbzb0dph
+
+### network run
+
+results using the same parameters:
+
+
+python src/federation/server.py
+python src/federation/global.py --name poc --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --max_size 10000 --pub_data_num 4000 --feature_dim 64 --num_img_clients 0 --num_txt_clients 1 --num_mm_clients 0 --client_num_per_round 1 --local_epochs 1 --comm_rounds 4 --not_bert
+
 ------------------------
 Begin original readme
 
