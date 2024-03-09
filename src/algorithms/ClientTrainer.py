@@ -33,6 +33,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def seed_torch(seed=2021):
+    print(f'ClientTrainer.seed_torch called seed={seed}')
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
@@ -137,7 +138,7 @@ class ClientTrainer:
     def __init__(self, args, dataset, dst, RGBmean, RGBstdv, data_dict, logger, global_test_set, inter_distance=4, loss='softmax',
                  gpuid='cuda:0', num_epochs=30, init_lr=0.0001, decay=0.1, batch_size=512,
                  imgsize=256, num_workers=4, print_freq=10, save_step=10, scale=128, pool_type='max_avg', client_id=-1, wandb=None):
-        seed_torch()
+        # seed_torch()
         self.args = args
         if dataset == 'Flickr30k':
             init_lr = 0.0002

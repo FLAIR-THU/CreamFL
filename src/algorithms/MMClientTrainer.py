@@ -28,6 +28,7 @@ from src.utils.serialize_utils import flatten_dict
 
 
 def seed_torch(seed=2021):
+    print(f'MMClientTrainer.seed_torch called seed={seed}')
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
