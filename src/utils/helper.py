@@ -9,40 +9,40 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 
 class AverageMeter(object):
-	"""Computes and stores the average and current value"""
-	def __init__(self):
-		self.reset()
+  """Computes and stores the average and current value"""
+  def __init__(self):
+    self.reset()
 
-	def reset(self):
-		self.val = 0
-		self.avg = 0
-		self.sum = 0
-		self.count = 0
+  def reset(self):
+    self.val = 0
+    self.avg = 0
+    self.sum = 0
+    self.count = 0
 
-	def update(self, val, n=1):
-		self.val = val
-		self.sum += val * n
-		self.count += n
-		self.avg = self.sum / self.count
+  def update(self, val, n=1):
+    self.val = val
+    self.sum += val * n
+    self.count += n
+    self.avg = self.sum / self.count
  
 class Helper:
   #All directories are end with /
   
   @staticmethod
   def get_accuracy(output, target, topk=(1,)):
-  	"""Computes the precision@k for the specified values of k"""
-  	maxk = max(topk)
-  	batch_size = target.size(0)
+    """Computes the precision@k for the specified values of k"""
+    maxk = max(topk)
+    batch_size = target.size(0)
   
-  	_, pred = output.topk(maxk, 1, True, True)
-  	pred = pred.t()
-  	correct = pred.eq(target.view(1, -1).expand_as(pred))
+    _, pred = output.topk(maxk, 1, True, True)
+    pred = pred.t()
+    correct = pred.eq(target.view(1, -1).expand_as(pred))
   
-  	res = []
-  	for k in topk:
-  		correct_k = correct[:k].view(-1).float().sum(0)
-  		res.append(correct_k.mul_(100.0 / batch_size))
-  	return res
+    res = []
+    for k in topk:
+      correct_k = correct[:k].view(-1).float().sum(0)
+      res.append(correct_k.mul_(100.0 / batch_size))
+    return res
   
   @staticmethod
   def pairwise_L2(x, y):
@@ -122,18 +122,25 @@ class Helper:
       
   @staticmethod
   def try_make_dir(d):
-  	if not os.path.isdir(d):
-  		# os.mkdir(d)
-  		os.makedirs(d) # nested is allowed
+    if not os.path.isdir(d):
+      # os.mkdir(d)
+      os.makedirs(d) # nested is allowed
 
   @staticmethod
   def get_hms(seconds):
-  	m, s = divmod(seconds, 60)
-  	h, m = divmod(m, 60)
-  	return h, m, s
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return h, m, s
   
   @staticmethod
   def set_seed(seed):
+    if seed == 0:
+      print("Random seed is used, cudnn.deterministic is set to False.")
+      torch.backends.cudnn.deterministic = False
+      torch.backends.cudnn.benchmark = True
+      return
+
+    print(f"Seed {seed} is used, cudnn.deterministic is set to True.")
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     np.random.seed(seed)
@@ -165,7 +172,7 @@ class Helper:
           raise ValueError("write_dict has wrong type")
   
   
- 	###======================== Visualization ================= ###
+   ###======================== Visualization ================= ###
   @staticmethod
   def save_images(samples, sample_dir, sample_name, offset=0, nrows=0):
     if nrows == 0:
