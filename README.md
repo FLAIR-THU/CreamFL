@@ -6,7 +6,7 @@
   * figure out how to run though the entire code quickly.
   * quick test run: `python src/main.py --name quick --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --max_size 64 --pub_data_num 2 --feature_dim 2 --num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3 --client_num_per_round 2 --local_epochs 2 --comm_rounds 2 --not_bert`
     * `--contrast_local_inter --contrast_local_intra --interintra_weight 0.5` Cream options.
-    * `--max_size` added by xiegeo, 0 or 10000 for old behaviour, client training data count, per client.
+    * `--max_size` added by xiegeo, 0 or 10000 for old behavior, client training data count, per client.
     * `--pub_data_num` public training data size (default 50000), proportional to communication cost (memory for local simulation) cost.
     * `--feature_dim` number of public features (default 256), proportional to communication cost.
     * `--num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3 --client_num_per_round 2` number of max client of each type, and total number of client per round.
@@ -37,7 +37,7 @@
 ### Configuration
 
 * flags: the same as local version.
-* fed_config: setup server and client options. Takes precedence over flags.
+* fed_config: setup server and client options.
 
 ### Run
 
@@ -69,21 +69,11 @@ python src/federation/client.py --name test --client_name txt_0 --max_size 64 --
 The network has to share the learned features. This could be through a file server,
 a CDN, or shared network storage, ex.  Directly accessing the same files is the
 easies to implement and easily extends to shared network storage, so this is implemented
-first for easy of local testing without lose of generality.
+first for ease of local testing without lose of generality.
 
 ## Prove of Concept
 
-### local simulation
-
-```bash
-python src/main.py --name poc-r1 --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --max_size 50000 --pub_data_num 4000 --feature_dim 64 --num_img_clients 0 --num_txt_clients 1 --num_mm_clients 0 --client_num_per_round 1 --local_epochs 5 --comm_rounds 10 --not_bert --seed 0 
-```
-
-results:
-
-### network run
-
-results using the same parameters:
+see [report/poc.pdf](report/poc.pdf)
 
 ------------------------
 Begin original readme
