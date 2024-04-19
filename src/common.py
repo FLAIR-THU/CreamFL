@@ -140,8 +140,8 @@ def prepare_args(description: str, script=None):
     parser = argparse.ArgumentParser(description=description)
     add_args(parser)
     args = parser.parse_args()
-    wandb = init_wandb(args, script=script)
+    # wandb = init_wandb(args, script=script)
     args.save_dirs = helper.get_save_dirs(args.exp_dir, args.name)
     args.log_dir = args.save_dirs['logs']
     helper.set_seed(args.seed)
-    return args, wandb
+    return args, None

@@ -549,6 +549,9 @@ class ClientTrainer:
                 self.test_top1.update(prec1[0], inputs_bt.size(0))
                 self.test_top5.update(prec5[0], inputs_bt.size(0))
 
+            current_path = os.path.dirname(os.path.dirname(__file__))
+            with open(os.path.join(current_path, 'accuracy.txt'), 'a') as f:
+                f.write(f'{self.local_epoch}:{self.test_top1.avg:.3f},{self.test_top5.avg:.3f}\n')
         printnreset(self.dset_name)
         self.model.train()
 

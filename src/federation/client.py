@@ -120,6 +120,9 @@ class Client:
         api.submit_local_repr(self.context, local_repr)
  
     def run(self):
+        current_path = os.path.dirname(os.path.dirname(__file__))
+        with open(os.path.join(current_path, 'accuracy.txt'), 'w') as f:
+            f.write('')
         while True:
             self.logger.log(f"Client {self.name} is starting a new round.")
             server_state = api.get_server_state(self.context, expected_state=api.RoundState.COLLECT)

@@ -5,13 +5,17 @@ from http import HTTPStatus
 from flask import Flask, request
 # internal dependencies
 import sys
+from src.algorithms.retrieval_trainer import TrainerEngine
+from src.utils.load_datasets import imagenet_transform
+from src.algorithms.eval_coco import COCOEvaluator
+from PIL import Image
 sys.path.append("./")
 sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
 from src.utils.logger import PythonLogger
-import api, context
-
+import api, context, os
+import torch
 server = Flask(__name__)
 
 server_context = None # set by main
@@ -20,9 +24,59 @@ current_state = api.ServerState()
 
 url_prefix = api.url_prefix
 
+engine = TrainerEngine()
+
 @server.route(f'{url_prefix}', methods=['GET'])
 def get():
     return json.dumps({"current_state":current_state.to_dict()})
+
+@server.route(f'{url_prefix}/last_train_result', methods=['GET'])
+def get_result():
+    current_path = os.path.dirname(os.path.dirname(__file__))
+    accuracy = ''
+    loss = ''
+    recall = ''
+    with open(os.path.join(current_path, 'accuracy.txt'), 'r') as f:
+        accuracy = f.readlines()
+    with open(os.path.join(current_path, 'loss.txt'), 'r') as f:
+        loss = f.readlines()
+    with open(os.path.join(current_path, 'recall.txt'), 'r') as f:
+        recall = f.readlines()
+    return json.dumps({"accuracy": accuracy, "loss": loss, "recall": recall})
+
+@server.route(f'{url_prefix}/inference', methods=['POST'])
+def inference():
+    result = None
+    if request.method == 'POST':
+        f = request.files['file']
+        captions = request.form['captions']
+        # f.save(f.filename)
+
+        global engine
+        engine.model.eval()
+        images = torch.tensor([convert_img(f)])
+        images = images.to(engine.device)
+        sentences = []
+        captions = captions.split('\n')
+        # dataloader = DataLoader(images,
+        #                             batch_size=1,
+        #                             shuffle=False,
+        #                             num_workers=1,
+        #                             collate_fn=image_to_caption_collate_fn,
+        #                             pin_memory=True)
+        result = engine.model(images, sentences, captions, len(sentences))
+        # result = engine.evaluate(images, sentences, captions, len(sentences))
+    return json.dumps({"status": "ok", "result": result})
+
+def convert_img(path, cutout_prob=0.0):
+    _image_transform = imagenet_transform(
+        random_resize_crop=False,
+        random_erasing_prob=cutout_prob,
+    )
+    img = Image.open(path).convert('RGB')
+    img = _image_transform(img)
+    return img
+
 
 @server.route(f'{url_prefix}/set_global_feature', methods=['PUT'])
 def set_global():
@@ -68,7 +122,14 @@ def add_client():
     return json.dumps({"status":"ok"})
 
 if __name__ == '__main__':
+    evaluator = COCOEvaluator(eval_method='matmul',
+                                       verbose=True,
+                                       eval_device='cuda',
+                                       n_crossfolds=5)
+    engine.load_models2("./test-best_model.pt", evaluator)
+    engine.model_to_device()
+
     server_context = context.new_server_context()
-    server.run(debug=True, port=2323)
+    server.run(port=2323)
 
 

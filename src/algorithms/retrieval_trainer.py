@@ -18,11 +18,12 @@ sys.path.append("../../")
 from src.algorithms.optimizers import get_optimizer
 from src.algorithms.optimizers import get_lr_scheduler
 from src.criterions import get_criterion
+from src.utils.load_datasets import load_vocab
 
 from src.networks.models import get_model
 from src.utils.config import parse_config
 from src.utils.serialize_utils import flatten_dict, torch_safe_load
-
+from src.utils.serialize_utils import torch_safe_load2
 try:
     from apex import amp
 except ImportError:
@@ -173,6 +174,57 @@ class EngineBase(object):
                                                                                             model_hash,
                                                                                             load_keys))
 
+    def set_config(self, feature_dim=256, not_bert=True, img='cifa100', txt='AG_NEWS'):
+        config = parse_config("./src/coco.yaml", strict_cast=False)
+        config.train.model_save_path = 'model_last_no_prob'
+        config.train.best_model_save_path = 'model_best_no_prob'
+        config.train.output_file = 'model_noprob'
+        config.model.img_client = img
+        config.model.txt_client = txt
+        config.train.model_save_path = config.train.model_save_path + '.pth'
+        config.train.best_model_save_path = config.train.best_model_save_path + '.pth'
+        config.train.output_file = config.train.output_file + '.log'
+
+        config.model.embed_dim = feature_dim  # set global model dim
+
+        if not_bert:
+            config.model.not_bert = True
+            config.model.cnn_type = 'resnet50'
+        else:
+            config.model.not_bert = False
+            config.model.cnn_type = 'resnet101'
+
+        return config
+
+    def load_models2(self, state_dict_path, evaluator, load_keys=None):
+        with open(state_dict_path, 'rb') as fin:
+            model_hash = hashlib.sha1(fin.read()).hexdigest()
+            self.metadata['pretrain_hash'] = model_hash
+
+        state_dict = torch.load(state_dict_path, map_location='cpu')
+
+        vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
+        vocab = load_vocab(vocab_path)
+        config = self.set_config()
+        self.create(config, vocab.word2idx, evaluator, False)
+        if 'model' not in state_dict:
+            torch_safe_load2(self.model, state_dict, strict=False)
+            return
+
+        if not load_keys:
+            load_keys = ['model', 'criterion', 'optimizer', 'lr_scheduler']
+        for key in load_keys:
+            try:
+                torch_safe_load2(getattr(self, key), state_dict[key])
+            except RuntimeError as e:
+                if self.logger is not None:
+                    self.logger.log('Unable to import state_dict, missing keys are found. {}'.format(e))
+                    torch_safe_load2(getattr(self, key), state_dict[key], strict=False)
+        if self.logger is not None:
+            self.logger.log('state dict is loaded from {} (hash: {}), load_key ({})'.format(state_dict_path,
+                                                                                            model_hash,
+                                                                                            load_keys))
+
     def load_state_dict(self, state_dict_path, load_keys=None):
         state_dict = torch.load(state_dict_path)
         config = parse_config(state_dict['config'])
@@ -226,7 +278,7 @@ class TrainerEngine(EngineBase):
 
         # print all keys of report_dict
         # print(report_dict.keys())
-        report_dict['summary'] = f"{report_dict['test__n_fold_i2t_recall_1']}, {report_dict['test__n_fold_i2t_recall_5']}, {report_dict['test__n_fold_i2t_recall_10']}, {report_dict['test__n_fold_t2i_recall_1']}, {report_dict['test__n_fold_t2i_recall_5']}, {report_dict['test__n_fold_t2i_recall_10']}, {report_dict['test__i2t_recall_1']}, {report_dict['test__i2t_recall_5']}, {report_dict['test__i2t_recall_10']}, {report_dict['test__t2i_recall_1']}, {report_dict['test__t2i_recall_5']}, {report_dict['test__t2i_recall_10']}"
+        report_dict['summary'] = f"{report_dict['__test__n_fold_i2t_recall_1']}, {report_dict['__test__n_fold_i2t_recall_5']}, {report_dict['__test__n_fold_i2t_recall_10']}, {report_dict['__test__n_fold_t2i_recall_1']}, {report_dict['__test__n_fold_t2i_recall_5']}, {report_dict['__test__n_fold_t2i_recall_10']}, {report_dict['__test__i2t_recall_1']}, {report_dict['__test__i2t_recall_5']}, {report_dict['__test__i2t_recall_10']}, {report_dict['__test__t2i_recall_1']}, {report_dict['__test__t2i_recall_5']}, {report_dict['__test__t2i_recall_10']}"
         if self.logger is not None:
             self.logger.report(report_dict,
                                prefix='[Eval] Report @step: ',

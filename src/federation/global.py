@@ -36,6 +36,8 @@ try:
 except ImportError:
     print('failed to import apex')
 
+current_path = os.path.dirname(os.path.dirname(__file__))
+
 class Global:
     def __init__(self, context):
         # all configs
@@ -158,11 +160,18 @@ class Global:
                                   prefix=self.engine.eval_prefix)
         rsum = test_scores['test']['n_fold']['i2t']['recall_1'] + test_scores['test']['n_fold']['t2i']['recall_1'] + \
                test_scores['test']['i2t']['recall_1'] + test_scores['test']['t2i']['recall_1']
-        self.wandb.log({"Server rsum_r1": rsum}, step=round_n)
-        self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=round_n)
-        self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=round_n)
-        self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=round_n)
-        self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=round_n)
+        rsum5 = test_scores['test']['n_fold']['i2t']['recall_5'] + test_scores['test']['n_fold']['t2i']['recall_5'] + \
+               test_scores['test']['i2t']['recall_5'] + test_scores['test']['t2i']['recall_5']
+        rsum10 = test_scores['test']['n_fold']['i2t']['recall_10'] + test_scores['test']['n_fold']['t2i']['recall_10'] + \
+               test_scores['test']['i2t']['recall_10'] + test_scores['test']['t2i']['recall_10']
+        # self.wandb.log({"Server rsum_r1": rsum}, step=round_n)
+        # self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=round_n)
+        # self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=round_n)
+        # self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=round_n)
+        # self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=round_n)
+
+        with open(os.path.join(current_path, 'recall.txt'), 'a') as f:
+            f.write(f'{round_n}:{rsum},{rsum5},{rsum10}\n')
 
         if self.best_score < rsum:
             best_score = rsum
@@ -170,10 +179,12 @@ class Global:
             metadata['best_epoch'] = round_n + 1
             self.best_metadata, self.best_scores = metadata, test_scores
 
-            torch.save({'net': self.engine.model.state_dict()}, self.args.name + '-best_model.pt')
+            self.engine.save_models(self.args.name + '-best_model.pt')
+            # torch.save({'net': self.engine.model.state_dict()}, self.args.name + '-best_model.pt')
 
         if round_n == self.args.comm_rounds - 1:
-            torch.save({'net': self.engine.model.state_dict()}, self.args.name + '-last_model.pt')
+            self.engine.save_models(self.args.name + '-last_model.pt')
+            # torch.save({'net': self.engine.model.state_dict()}, self.args.name + '-last_model.pt')
 
         self.engine.lr_scheduler.step()
 
@@ -276,6 +287,9 @@ class Global:
 
             self.engine.optimizer.zero_grad()
 
+            with open(os.path.join(current_path, 'loss.txt'), 'a') as f:
+                f.write(f'{round_n - 1}:{loss:.3f}\n')
+
             if self.config.train.get('use_fp16'):
                 with amp.scale_loss(loss, self.engine.optimizer) as scaled_loss:
                     scaled_loss.backward()
@@ -293,6 +307,10 @@ if __name__ == "__main__":
     global_compute = Global(context)
     global_compute.load_dataset()
     server_state = api.get_server_state(context)
+    with open(os.path.join(current_path, 'loss.txt'), 'w') as f:
+        f.write('')
+    with open(os.path.join(current_path, 'recall.txt'), 'w') as f:
+        f.write('')
     while server_state.round_number < context.args.comm_rounds:
         server_state, ok = global_compute.train(server_state)
         if not ok:
