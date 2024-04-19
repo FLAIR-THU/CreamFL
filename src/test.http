@@ -1,0 +1,20 @@
+###
+POST http://localhost:2323/cream_api/inference
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="v2-test_r.jpg"
+
+< /home/shannon/Pictures/v2-test_r.jpg
+--WebAppBoundary
+content-Disposition: form-data; name="captions"
+Content-Type: text/plain
+
+The scissors with black handles are sitting open.
+a cup of coffee sits next to a panini sandwich on a counter
+--WebAppBoundary
+
+### 获取详情
+GET http://localhost:5000/job?id=25
