@@ -54,7 +54,8 @@ def inference():
 
         global engine
         engine.model.eval()
-        images = torch.tensor([convert_img(f)])
+        images = (torch.tensor(convert_img(f)))
+        images = images.unsqueeze(0)
         images = images.to(engine.device)
         sentences = []
         captions = captions.split('\n')
