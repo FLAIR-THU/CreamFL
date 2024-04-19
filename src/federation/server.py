@@ -123,14 +123,15 @@ def add_client():
     return json.dumps({"status":"ok"})
 
 if __name__ == '__main__':
-    evaluator = COCOEvaluator(eval_method='matmul',
-                                       verbose=True,
-                                       eval_device='cuda',
-                                       n_crossfolds=5)
-    engine.load_models2("./test-best_model.pt", evaluator)
-    engine.model_to_device()
-
     server_context = context.new_server_context()
+    if server_context.args.inference:
+        evaluator = COCOEvaluator(eval_method='matmul',
+                                  verbose=True,
+                                  eval_device='cuda',
+                                  n_crossfolds=5)
+        engine.load_models2("./test-best_model.pt", evaluator)
+        engine.model_to_device()
+
     server.run(port=2323)
 
 

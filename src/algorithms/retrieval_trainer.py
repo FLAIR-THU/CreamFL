@@ -174,7 +174,7 @@ class EngineBase(object):
                                                                                             model_hash,
                                                                                             load_keys))
 
-    def set_config(self, feature_dim=256, not_bert=True, img='cifa100', txt='AG_NEWS'):
+    def set_config(self, feature_dim=256, not_bert=False, img='cifa100', txt='AG_NEWS'):
         config = parse_config("./src/coco.yaml", strict_cast=False)
         config.train.model_save_path = 'model_last_no_prob'
         config.train.best_model_save_path = 'model_best_no_prob'
