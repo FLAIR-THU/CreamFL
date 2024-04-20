@@ -54,7 +54,7 @@ def inference():
 
         global engine
         engine.model.eval()
-        images = (torch.tensor(convert_img(f)))
+        images = (convert_img(f))
         images = images.unsqueeze(0)
         images = images.to(engine.device)
         sentences = []
@@ -65,9 +65,20 @@ def inference():
         #                             num_workers=1,
         #                             collate_fn=image_to_caption_collate_fn,
         #                             pin_memory=True)
-        result = engine.model(images, sentences, captions, len(sentences))
-        # result = engine.evaluate(images, sentences, captions, len(sentences))
+        output = engine.model(images, sentences, captions, len(sentences))
+        result = evaluate_single(output)
     return json.dumps({"status": "ok", "result": result})
+
+def evaluate_single(output):
+    _image_features = output['image_features']
+    _caption_features = output['caption_features']
+
+    if output.get('image_logsigma') is not None:
+        _image_sigmas = output['image_logsigma']
+        _caption_sigmas = output['caption_logsigma']
+
+    result = engine.evaluator.evaluate_single(_image_features, _caption_features, _image_sigmas, _caption_sigmas)
+    return result
 
 def convert_img(path, cutout_prob=0.0):
     _image_transform = imagenet_transform(
@@ -129,7 +140,7 @@ if __name__ == '__main__':
                                   verbose=True,
                                   eval_device='cuda',
                                   n_crossfolds=5)
-        engine.load_models2("./test-best_model.pt", evaluator)
+        engine.load_models2("./best_model.pt", evaluator)
         engine.model_to_device()
 
     server.run(port=2323)

@@ -217,6 +217,7 @@ class EngineBase(object):
             try:
                 torch_safe_load2(getattr(self, key), state_dict[key])
             except RuntimeError as e:
+                print(e)
                 if self.logger is not None:
                     self.logger.log('Unable to import state_dict, missing keys are found. {}'.format(e))
                     torch_safe_load2(getattr(self, key), state_dict[key], strict=False)
