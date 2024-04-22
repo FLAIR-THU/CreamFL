@@ -194,41 +194,6 @@ def _get_coco_loader(image_root,
     return dataloader
 
 
-def _get_coco_loader2(image_root,
-                     annotation_path,
-                     ids, vocab,
-                     num_workers,
-                     batch_size=64,
-                     train=False,
-                     extra_ids=None,
-                     extra_annotation_path=None,
-                     cutout_prob=0.0,
-                     caption_drop_prob=0.0,
-                     client=-1):
-    _image_transform = imagenet_transform(
-        random_resize_crop=train,
-        random_erasing_prob=cutout_prob,
-    )
-    _caption_transform = caption_transform(vocab, caption_drop_prob)
-
-    coco_dataset = CocoCaptionsCap(image_root, annotation_path,
-                                   extra_annFile=extra_annotation_path,
-                                   ids=ids,
-                                   extra_ids=extra_ids,
-                                   transform=_image_transform,
-                                   target_transform=_caption_transform, client=client)
-
-    dataloader = DataLoader(coco_dataset,
-                            batch_size=batch_size,
-                            shuffle=train,
-                            num_workers=num_workers,
-                            collate_fn=image_to_caption_collate_fn,
-                            pin_memory=True)
-
-    print(f'Loading COCO Caption: n_images {coco_dataset.n_images} n_captions {len(coco_dataset)}...')
-    return dataloader
-
-
 def load_vocab(vocab_path):
     if isinstance(vocab_path, str):
         vocab = Vocabulary()

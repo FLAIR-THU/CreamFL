@@ -9,6 +9,7 @@ from src.algorithms.retrieval_trainer import TrainerEngine
 from src.utils.load_datasets import imagenet_transform
 from src.algorithms.eval_coco import COCOEvaluator
 from PIL import Image
+import numpy as np
 sys.path.append("./")
 sys.path.append("../")
 sys.path.append("../../")
@@ -16,6 +17,7 @@ sys.path.append("../../../")
 from src.utils.logger import PythonLogger
 import api, context, os
 import torch
+from src.utils.tensor_utils import to_numpy
 server = Flask(__name__)
 
 server_context = None # set by main
@@ -56,9 +58,9 @@ def inference():
         engine.model.eval()
         images = (convert_img(f))
         images = images.unsqueeze(0)
-        images = images.to(engine.device)
+        images = images.to(engine.device)  # used
         sentences = []
-        captions = captions.split('\n')
+        captions = captions.split('\n')  # used
         # dataloader = DataLoader(images,
         #                             batch_size=1,
         #                             shuffle=False,
@@ -73,12 +75,17 @@ def evaluate_single(output):
     _image_features = output['image_features']
     _caption_features = output['caption_features']
 
-    if output.get('image_logsigma') is not None:
-        _image_sigmas = output['image_logsigma']
-        _caption_sigmas = output['caption_logsigma']
+    n_embeddings = 7
+    feat_size = 2
+    image_features = np.zeros((1, n_embeddings, feat_size))
+    caption_features = np.zeros((len(_caption_features), n_embeddings, feat_size))
+    image_features[0] = to_numpy(_image_features[0])
+    caption_features[0] = to_numpy(_caption_features[0])
+    image_features = torch.from_numpy(image_features)
+    caption_features = torch.from_numpy(caption_features)
 
-    result = engine.evaluator.evaluate_single(_image_features, _caption_features, _image_sigmas, _caption_sigmas)
-    return result
+    retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, torch.tensor([1]), torch.tensor([1, 2]))
+    return retrieved_items
 
 def convert_img(path, cutout_prob=0.0):
     _image_transform = imagenet_transform(
