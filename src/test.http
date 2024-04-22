@@ -12,8 +12,11 @@ Content-Disposition: form-data; name="file"; filename="v2-test_r.jpg"
 content-Disposition: form-data; name="captions"
 Content-Type: text/plain
 
-The scissors with black handles are sitting open.
-a cup of coffee sits next to a panini sandwich on a counter
+A bicycle replica with a clock as the front wheel.
+The bike has a clock as a tire.
+A black metal bicycle with a clock inside the front wheel.
+A bicycle figurine in which the front wheel is replaced with a clock\n
+A clock with the appearance of the wheel of a bicycle
 --WebAppBoundary
 
 ### 获取详情

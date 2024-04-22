@@ -84,7 +84,7 @@ def evaluate_single(output):
     image_features = torch.from_numpy(image_features)
     caption_features = torch.from_numpy(caption_features)
 
-    retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, torch.tensor([1]), torch.tensor([1, 2]))
+    retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, torch.tensor([1]), torch.tensor([37, 181, 478, 6637, 6802]), topk=2, batch_size=1)
     return retrieved_items
 
 def convert_img(path, cutout_prob=0.0):
