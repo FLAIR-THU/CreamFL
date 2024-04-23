@@ -105,8 +105,8 @@ def evaluate_single(output, f_ids):
     id = 1
     q_id = [id]
 
-    retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, q_id, torch.tensor(f_ids), topk=1, batch_size=1)
-    return retrieved_items[id][0].item()
+    retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, q_id, torch.tensor(f_ids), topk=3, batch_size=1)
+    return {"pred": retrieved_items[id][0].item(), "score": retrieved_scores[id].tolist()}
 
 def convert_img(path, cutout_prob=0.0):
     _image_transform = imagenet_transform(
