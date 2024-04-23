@@ -9,6 +9,8 @@ from src.algorithms.retrieval_trainer import TrainerEngine
 from src.utils.load_datasets import imagenet_transform
 from src.algorithms.eval_coco import COCOEvaluator
 from PIL import Image
+from uuid import uuid4
+from flask import send_from_directory
 import numpy as np
 sys.path.append("./")
 sys.path.append("../")
@@ -19,6 +21,7 @@ import api, context, os
 import torch
 from src.utils.tensor_utils import to_numpy
 server = Flask(__name__)
+server.config['UPLOAD_FOLDER'] = './uploads'
 
 server_context = None # set by main
 
@@ -31,6 +34,10 @@ engine = TrainerEngine()
 @server.route(f'{url_prefix}', methods=['GET'])
 def get():
     return json.dumps({"current_state":current_state.to_dict()})
+
+@server.route(f'{url_prefix}/uploads/<path:path>')
+def send_img(path):
+    return send_from_directory('uploads', path)
 
 @server.route(f'{url_prefix}/last_train_result', methods=['GET'])
 def get_result():
@@ -46,17 +53,27 @@ def get_result():
         recall = f.readlines()
     return json.dumps({"accuracy": accuracy, "loss": loss, "recall": recall})
 
+@server.route(f'{url_prefix}/upload', methods=['POST'])
+def upload():
+    filename = ''
+    if request.method == 'POST':
+        f = request.files['file']
+        filename = f"{uuid4()}.{f.filename.split('.')[-1]}"
+        f.save(os.path.join(server.config['UPLOAD_FOLDER'], filename))
+
+    return json.dumps({"status": "ok", "url": filename})
+
 @server.route(f'{url_prefix}/inference', methods=['POST'])
 def inference():
     result = None
     if request.method == 'POST':
-        f = request.files['file']
         captions = request.form['captions']
-        # f.save(f.filename)
+        f = request.form['file']
+        batch = request.form['batch']
 
         global engine
         engine.model.eval()
-        images = (convert_img(f))
+        images = (convert_img(os.path.join(server.config['UPLOAD_FOLDER'], f)))
         images = images.unsqueeze(0)
         images = images.to(engine.device)  # used
         sentences = []
@@ -76,7 +93,7 @@ def evaluate_single(output):
     _caption_features = output['caption_features']
 
     n_embeddings = 7
-    feat_size = 2
+    feat_size = 256
     image_features = np.zeros((1, n_embeddings, feat_size))
     caption_features = np.zeros((len(_caption_features), n_embeddings, feat_size))
     image_features[0] = to_numpy(_image_features[0])
