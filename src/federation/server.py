@@ -85,10 +85,11 @@ def inference():
         #                             collate_fn=image_to_caption_collate_fn,
         #                             pin_memory=True)
         output = engine.model(images, sentences, captions, len(sentences))
-        result = evaluate_single(output)
+        f_ids = [i for i in range(len(captions))]
+        result = evaluate_single(output, f_ids)
     return json.dumps({"status": "ok", "result": result})
 
-def evaluate_single(output):
+def evaluate_single(output, f_ids):
     _image_features = output['image_features']
     _caption_features = output['caption_features']
 
@@ -101,8 +102,11 @@ def evaluate_single(output):
     image_features = torch.from_numpy(image_features)
     caption_features = torch.from_numpy(caption_features)
 
-    retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, torch.tensor([203564]), torch.tensor([37, 181, 478, 6637, 6802]), topk=2, batch_size=1)
-    return retrieved_items
+    id = 1
+    q_id = [id]
+
+    retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, q_id, torch.tensor(f_ids), topk=1, batch_size=1)
+    return retrieved_items[id][0].item()
 
 def convert_img(path, cutout_prob=0.0):
     _image_transform = imagenet_transform(
