@@ -10,7 +10,7 @@ from src.utils.load_datasets import imagenet_transform
 from src.algorithms.eval_coco import COCOEvaluator
 from PIL import Image
 from uuid import uuid4
-from flask import send_from_directory
+from flask import send_file
 import numpy as np
 sys.path.append("./")
 sys.path.append("../")
@@ -21,7 +21,10 @@ import api, context, os
 import torch
 from src.utils.tensor_utils import to_numpy
 server = Flask(__name__)
-server.config['UPLOAD_FOLDER'] = './uploads'
+
+dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+print(dir)
+server.config['UPLOAD_FOLDER'] = f'{dir}/uploads'
 
 server_context = None # set by main
 
@@ -37,7 +40,7 @@ def get():
 
 @server.route(f'{url_prefix}/uploads/<path:path>')
 def send_img(path):
-    return send_from_directory('uploads', path)
+    return send_file(f"{server.config['UPLOAD_FOLDER']}/{path}")
 
 @server.route(f'{url_prefix}/last_train_result', methods=['GET'])
 def get_result():
