@@ -66,31 +66,44 @@ def upload():
 
     return json.dumps({"status": "ok", "url": filename})
 
+
 @server.route(f'{url_prefix}/inference', methods=['POST'])
 def inference():
     result = None
     if request.method == 'POST':
-        captions = request.form['captions']
-        f = request.form['file']
         batch = request.form['batch']
 
         global engine
         engine.model.eval()
-        images = (convert_img(os.path.join(server.config['UPLOAD_FOLDER'], f)))
-        images = images.unsqueeze(0)
-        images = images.to(engine.device)  # used
-        sentences = []
-        captions = captions.split('\n')  # used
-        # dataloader = DataLoader(images,
-        #                             batch_size=1,
-        #                             shuffle=False,
-        #                             num_workers=1,
-        #                             collate_fn=image_to_caption_collate_fn,
-        #                             pin_memory=True)
-        output = engine.model(images, sentences, captions, len(sentences))
-        f_ids = [i for i in range(len(captions))]
-        result = evaluate_single(output, f_ids)
+        result = []
+        if batch:
+            config_path = request.form['config_path']
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                for i in config:
+                    captions = [item['text'] for item in i['captions']]
+                    result.append(evl(i['img_path'], captions))
+        else:
+            captions = request.form['captions']
+            f = request.form['file']
+            path = os.path.join(server.config['UPLOAD_FOLDER'], f)
+            result.append(evl(path, captions))
     return json.dumps({"status": "ok", "result": result})
+
+
+def evl(f, captions):
+    images = (convert_img(f))
+    images = images.unsqueeze(0)
+    images = images.to(engine.device)  # used
+    sentences = []
+    if isinstance(captions, str):
+        captions = captions.split('\n')  # used
+
+    output = engine.model(images, sentences, captions, len(sentences))
+    f_ids = [i for i in range(len(captions))]
+    result = evaluate_single(output, f_ids)
+    return result
+
 
 def evaluate_single(output, f_ids):
     _image_features = output['image_features']
@@ -171,7 +184,7 @@ if __name__ == '__main__':
                                   verbose=True,
                                   eval_device='cuda',
                                   n_crossfolds=5)
-        engine.load_models2("./best_model.pt", evaluator)
+        engine.load_models2("./sl-best_model.pt", evaluator)
         engine.model_to_device()
 
     server.run(port=2323)
