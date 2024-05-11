@@ -5,15 +5,15 @@ Content-Type: multipart/form-data; boundary=WebAppBoundary
 --WebAppBoundary
 content-Disposition: form-data; name="file"
 
-/home/shannon/dev/projects/distributed_cream/uploads/5bd6e3e4-cbde-4a6b-867f-881e649a4417.jpg
+/home/shannon/dev/projects/distributed_cream/uploads/52bbf136-11f5-46dc-be4f-33c9a75255f7.jpg
 --WebAppBoundary
 content-Disposition: form-data; name="captions"
 
 A bicycle replica with a clock as the front wheel.
+A dog is sniffing at a plate of food on a table.
+A mother and baby zebra walking in the grass.
 The bike has a clock as a tire.
-A black metal bicycle with a clock inside the front wheel.
-A bicycle figurine in which the front wheel is replaced with a clock\n
-A clock with the appearance of the wheel of a bicycle
+A motorcycle with its brake extended standing outside
 --WebAppBoundary
 content-Disposition: form-data; name="batch"
 
