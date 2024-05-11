@@ -2,15 +2,12 @@
 POST http://localhost:2323/cream_api/inference
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
-
-
 --WebAppBoundary
-Content-Disposition: form-data; name="file"; filename="v2-test_r.jpg"
+content-Disposition: form-data; name="file"
 
-< /home/shannon/Pictures/v2-test_r.jpg
+/home/shannon/dev/projects/distributed_cream/uploads/5bd6e3e4-cbde-4a6b-867f-881e649a4417.jpg
 --WebAppBoundary
 content-Disposition: form-data; name="captions"
-Content-Type: text/plain
 
 A bicycle replica with a clock as the front wheel.
 The bike has a clock as a tire.
@@ -18,6 +15,15 @@ A black metal bicycle with a clock inside the front wheel.
 A bicycle figurine in which the front wheel is replaced with a clock\n
 A clock with the appearance of the wheel of a bicycle
 --WebAppBoundary
+content-Disposition: form-data; name="batch"
+
+False
+--WebAppBoundary--
+
+
+###
+POST http://localhost:2323/cream_api/upoad
+Content-Type: application/x-www-form-urlencoded
 
 
 ###

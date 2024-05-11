@@ -76,7 +76,7 @@ def inference():
         global engine
         engine.model.eval()
         result = []
-        if batch:
+        if batch == 'True':
             config_path = request.form['config_path']
             with open(config_path, 'r') as f:
                 config = json.load(f)
@@ -118,7 +118,7 @@ def evaluate_single(output, f_ids):
     image_features = torch.from_numpy(image_features)
     caption_features = torch.from_numpy(caption_features)
 
-    id = 1
+    id = 2
     q_id = [id]
 
     retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, q_id, torch.tensor(f_ids), topk=3, batch_size=1)
