@@ -69,6 +69,6 @@ def add_client():
 
 if __name__ == '__main__':
     server_context = context.new_server_context()
-    server.run(debug=True, port=2323)
+    server.run(debug=True, port=2323, use_reloader=False)
 
 
