@@ -114,11 +114,17 @@ def evaluate_single(output, f_ids):
     image_features = np.zeros((1, n_embeddings, feat_size))
     caption_features = np.zeros((len(_caption_features), n_embeddings, feat_size))
     image_features[0] = to_numpy(_image_features[0])
-    caption_features[0] = to_numpy(_caption_features[0])
+    for i in range(len(_caption_features)):
+        caption_features[i] = to_numpy(_caption_features[i])
+    # caption_features[0] = to_numpy(_caption_features[0])
+    # caption_features[1] = to_numpy(_caption_features[1])
+    # caption_features[2] = to_numpy(_caption_features[2])
+    # caption_features[3] = to_numpy(_caption_features[3])
+    # caption_features[4] = to_numpy(_caption_features[4])
     image_features = torch.from_numpy(image_features)
     caption_features = torch.from_numpy(caption_features)
 
-    id = 2
+    id = 1
     q_id = [id]
 
     retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, q_id, torch.tensor(f_ids), topk=5, batch_size=1)
@@ -184,9 +190,9 @@ if __name__ == '__main__':
                                   verbose=True,
                                   eval_device='cuda',
                                   n_crossfolds=5)
-        engine.load_models2("./sl-best_model.pt", evaluator)
+        engine.load_models2("./sl2-best_model.pt", evaluator)
         engine.model_to_device()
 
-    server.run(port=2323)
+    server.run(port=server_context.args.port, host="0.0.0.0")
 
 
