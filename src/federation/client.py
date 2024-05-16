@@ -62,6 +62,12 @@ class Client:
         if self.client_config.data_type == 'txt':
             self.context.has_img_model = False
             self.context.has_txt_model = True
+        elif self.client_config.data_type == 'img':
+            self.context.has_img_model = True
+            self.context.has_txt_model = False
+        elif self.client_config.data_type == 'mm':
+            self.context.has_img_model = True
+            self.context.has_txt_model = True
         else:
             raise ValueError(f'client_config.data_type={self.client_config.data_type} is not implemented by federation.client.Client')
 
@@ -83,7 +89,7 @@ class Client:
         client_config = self.client_config
 
         data_type = client_config.data_type
-        data_partition_file_name = client_config.data_partition
+        # data_partition_file_name = client_config.data_partition # todo
         data_partition_index = client_config.data_partition_index
 
         alpha = args.alpha
@@ -95,11 +101,33 @@ class Client:
             # this loads all train loaders for all clients, from old code
             train_loaders, test_set = get_FL_trainloader(dataset, os.environ['HOME'] + "/data",
                                                                     args.num_txt_clients, "hetero", alpha, batch_size, max_size)
-            dst = os.environ['HOME'] + f'/data/yClient/{dataset}-{self.name}'
+            dst = os.environ['HOME'] + f'/data/yClient/{dataset}-{self.name}' # unused?
             self.trainer = ClientTrainer(args, dataset, dst, None, None, None, self.logger,
                                     global_test_set=test_set, inter_distance=4, client_id=data_partition_index, wandb=self.wandb)
             self.trainer.train_loader = train_loaders[data_partition_index]
-            pass
+        elif data_type == 'img':
+            dataset = 'cifar100'
+            # this loads all train loaders for all clients, from old code
+            train_loaders, test_set = get_FL_trainloader(dataset, os.environ['HOME'] + "/data/cifar100",
+                                                                 args.num_img_clients, "hetero", alpha, batch_size, max_size)
+            dataset = 'Cifar100'
+            dst = os.environ['HOME'] + f'/data/yClient/{dataset}-{self.name}'  # unused?
+            self.trainer = ClientTrainer(args, dataset, dst, RGBmean['Cifar100'], RGBstdv['Cifar100'], None, self.logger,
+                                    global_test_set=test_set, inter_distance=4, client_id=data_partition_index, wandb=self.wandb)
+            self.trainer.train_loader = train_loaders[data_partition_index]
+        elif data_type == 'mm':
+            config = parse_config("./src/f30k.yaml", strict_cast=False)
+            config.model.cache_dir = config.model.cache_dir + '-' + config.train.server_dataset
+            config.train.output_file = os.path.join(config.model.cache_dir, config.train.output_file)
+            config.train.best_model_save_path = os.path.join(config.model.cache_dir, config.train.best_model_save_path)
+            config.train.model_save_path = os.path.join(config.model.cache_dir, config.train.model_save_path)
+            config.model.embed_dim = self.args.feature_dim
+            config.model.not_bert = True
+            
+            self.trainer = MMClientTrainer(args, config, self.logger, client=data_partition_index, dset_name="flicker30k",
+                                    device='cuda',
+                                    vocab_path='./src/datasets/vocabs/coco_vocab.pkl',
+                                    mlp_local=self.args.mlp_local)
         else:
             raise ValueError(f'client_config.data_type={data_type} is not implemented by federation.client.get_data_loader()')
         
@@ -131,7 +159,7 @@ class Client:
             self.logger.log(f"Global feature retrieved")
             img, txt = self.train(global_feature)
             del global_feature
-            api.add_local_repr(self.context, server_state, img, txt, self.trainer.local_rounds)
+            api.add_local_repr(self.context, server_state, img, txt, -1) # todo: set local rounds
             del img, txt
         
 if __name__ == "__main__":
