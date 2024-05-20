@@ -78,11 +78,15 @@ def inference():
         result = []
         if batch == 'True':
             config_path = request.form['config_path']
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-                for i in config:
-                    captions = [item['text'] for item in i['captions']]
-                    result.append(evl(i['img_path'], captions))
+            config = json.loads(config_path)
+            for i in config:
+                captions = [item['text'] for item in i['captions']]
+                result.append(evl(i['img_path'], captions))
+            # with open(config_path, 'r') as f:
+            #     config = json.load(f)
+            #     for i in config:
+            #         captions = [item['text'] for item in i['captions']]
+            #         result.append(evl(i['img_path'], captions))
         else:
             captions = request.form['captions']
             f = request.form['file']
@@ -128,7 +132,8 @@ def evaluate_single(output, f_ids):
     q_id = [id]
 
     retrieved_items, retrieved_scores, _ = engine.evaluator.retrieve(image_features, caption_features, q_id, torch.tensor(f_ids), topk=5, batch_size=1)
-    return {"pred": retrieved_items[id][0].item(), "score": retrieved_scores[id].tolist()}
+    values = [item.item() for item in retrieved_items[id]]
+    return {"pred": retrieved_items[id][0].item(), "score": values}
 
 def convert_img(path, cutout_prob=0.0):
     _image_transform = imagenet_transform(
@@ -193,6 +198,6 @@ if __name__ == '__main__':
         engine.load_models2("./sl2-best_model.pt", evaluator)
         engine.model_to_device()
 
-    server.run(port=server_context.args.port, host="0.0.0.0")
+    server.run(port=server_context.args.port, host="0.0.0.0", debug=True)
 
 
