@@ -32,7 +32,3 @@ def torch_safe_load(module, state_dict, strict=True):
         k.replace('module.', ''): v for k, v in state_dict.items()
     }, strict=strict)
 
-def torch_safe_load2(module, state_dict, strict=True):
-    module.load_state_dict({
-        k.replace('module.', ''): v for k, v in state_dict.items()
-    })

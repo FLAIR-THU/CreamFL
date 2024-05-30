@@ -23,7 +23,6 @@ from src.utils.load_datasets import load_vocab
 from src.networks.models import get_model
 from src.utils.config import parse_config
 from src.utils.serialize_utils import flatten_dict, torch_safe_load
-from src.utils.serialize_utils import torch_safe_load2
 try:
     from apex import amp
 except ImportError:
@@ -174,27 +173,6 @@ class EngineBase(object):
                                                                                             model_hash,
                                                                                             load_keys))
 
-    def set_config(self, feature_dim=256, not_bert=False, img='cifa100', txt='AG_NEWS'):
-        config = parse_config("./src/coco.yaml", strict_cast=False)
-        config.train.model_save_path = 'model_last_no_prob'
-        config.train.best_model_save_path = 'model_best_no_prob'
-        config.train.output_file = 'model_noprob'
-        config.model.img_client = img
-        config.model.txt_client = txt
-        config.train.model_save_path = config.train.model_save_path + '.pth'
-        config.train.best_model_save_path = config.train.best_model_save_path + '.pth'
-        config.train.output_file = config.train.output_file + '.log'
-
-        config.model.embed_dim = feature_dim  # set global model dim
-
-        if not_bert:
-            config.model.not_bert = True
-            config.model.cnn_type = 'resnet50'
-        else:
-            config.model.not_bert = False
-            config.model.cnn_type = 'resnet101'
-
-        return config
 
     def load_models2(self, state_dict_path, evaluator, load_keys=None):
         with open(state_dict_path, 'rb') as fin:
@@ -207,19 +185,19 @@ class EngineBase(object):
         vocab = load_vocab(vocab_path)
         self.create(munch.munchify(state_dict['config']), vocab.word2idx, evaluator, False)
         if 'model' not in state_dict:
-            torch_safe_load2(self.model, state_dict, strict=False)
+            torch_safe_load(self.model, state_dict)
             return
 
         if not load_keys:
             load_keys = ['model', 'criterion', 'optimizer', 'lr_scheduler']
         for key in load_keys:
             try:
-                torch_safe_load2(getattr(self, key), state_dict[key])
+                torch_safe_load(getattr(self, key), state_dict[key])
             except RuntimeError as e:
                 print(e)
                 if self.logger is not None:
                     self.logger.log('Unable to import state_dict, missing keys are found. {}'.format(e))
-                    torch_safe_load2(getattr(self, key), state_dict[key], strict=False)
+                    torch_safe_load(getattr(self, key), state_dict[key])
         if self.logger is not None:
             self.logger.log('state dict is loaded from {} (hash: {}), load_key ({})'.format(state_dict_path,
                                                                                             model_hash,
