@@ -10,7 +10,6 @@ import sys
 
 import torch
 import torch.nn as nn
-from torch.distributions import Categorical
 from tqdm import tqdm
 
 sys.path.append("./")
@@ -18,17 +17,12 @@ sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
 
-from src.datasets.load_FL_datasets import get_FL_trainloader, get_dataloader
-from src.algorithms.ClientTrainer import ClientTrainer
-from src.algorithms.MMClientTrainer import MMClientTrainer
 from src.utils.color_lib import RGBmean, RGBstdv
 
 from src.algorithms.eval_coco import COCOEvaluator
-from src.algorithms.retrieval_trainer import TrainerEngine, rawTrainerEngine
-from src.utils.config import parse_config
+from src.algorithms.retrieval_trainer import TrainerEngine
 from src.utils.logger import PythonLogger
 
-from config import load_config
 import api
 
 try:
@@ -164,11 +158,12 @@ class Global:
                test_scores['test']['i2t']['recall_5'] + test_scores['test']['t2i']['recall_5']
         rsum10 = test_scores['test']['n_fold']['i2t']['recall_10'] + test_scores['test']['n_fold']['t2i']['recall_10'] + \
                test_scores['test']['i2t']['recall_10'] + test_scores['test']['t2i']['recall_10']
-        # self.wandb.log({"Server rsum_r1": rsum}, step=round_n)
-        # self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=round_n)
-        # self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=round_n)
-        # self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=round_n)
-        # self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=round_n)
+               
+        self.wandb.log({"Server rsum_r1": rsum}, step=round_n)
+        self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=round_n)
+        self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=round_n)
+        self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=round_n)
+        self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=round_n)
 
         with open(os.path.join(current_path, 'recall.txt'), 'a') as f:
             f.write(f'{round_n}:{rsum},{rsum5},{rsum10}\n')

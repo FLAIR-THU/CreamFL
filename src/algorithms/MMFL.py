@@ -8,7 +8,6 @@ import sys
 
 import torch
 import torch.nn as nn
-from torch.distributions import Categorical
 from tqdm import tqdm
 
 sys.path.append("./")
@@ -16,13 +15,13 @@ sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
 
-from src.datasets.load_FL_datasets import get_FL_trainloader, get_dataloader
+from src.datasets.load_FL_datasets import get_FL_trainloader
 from src.algorithms.ClientTrainer import ClientTrainer
 from src.algorithms.MMClientTrainer import MMClientTrainer
 from src.utils.color_lib import RGBmean, RGBstdv
 
 from src.algorithms.eval_coco import COCOEvaluator
-from src.algorithms.retrieval_trainer import TrainerEngine, rawTrainerEngine
+from src.algorithms.retrieval_trainer import TrainerEngine
 from src.utils.config import parse_config
 from src.utils.load_datasets import prepare_coco_dataloaders
 from src.utils.logger import PythonLogger

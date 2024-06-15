@@ -10,6 +10,7 @@ def add_args(parser: argparse.ArgumentParser):
     parser.add_argument('--inference', type=bool, default=False, help='inferencing or not.')
     parser.add_argument('--port', type=int, default=2323, help='port')
     parser.add_argument('--name', type=str, default='Test', help='The name for different experimental runs.')
+    parser.add_argument('--disable_wandb', action='store_true', default=False)
     parser.add_argument('--exp_dir', type=str, default='./experiments/',
                         help='Locations to save different experimental runs.')
     parser.add_argument('--local_epochs', type=int, default=2) # original default = 5
@@ -100,6 +101,8 @@ def init_wandb(args, script=None):
   """
 
     import wandb
+    if args.disable_wandb:
+        return wandb.init(mode="disabled")
 
     name = str(args.name)
 
