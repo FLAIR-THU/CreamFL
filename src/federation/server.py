@@ -16,7 +16,6 @@ sys.path.append("./")
 sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
-from src.utils.logger import PythonLogger
 import api, context, os
 import torch
 from src.utils.tensor_utils import to_numpy

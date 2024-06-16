@@ -6,7 +6,7 @@ from src.utils.config import parse_config
 
 
 
-def add_args(parser: argparse.ArgumentParser):
+def add_args(parser: argparse.ArgumentParser, is_vqa=False):
     parser.add_argument('--inference', type=bool, default=False, help='inferencing or not.')
     parser.add_argument('--port', type=int, default=2323, help='port')
     parser.add_argument('--name', type=str, default='Test', help='The name for different experimental runs.')
@@ -84,6 +84,13 @@ def add_args(parser: argparse.ArgumentParser):
     # === federated learning networking ===
     parser.add_argument('--fed_config', default='fed_config.yaml', help="federation network configuration file")
     parser.add_argument('--client_name', help="client name, only used by clients")
+    
+    if is_vqa: # vqa only options
+        parser.add_argument('--vqa_fusion_network', default='linear')
+        parser.add_argument('--vqa_pretrained_base_model', default='./sl2-best_model.pt')
+        parser.add_argument('--vqa_pretrained_base_model_eval', default=True, 
+                            help='check how good the base model is on the retrieval task to make sure we are loading a good model.')
+
 
 def init_wandb(args, script=None):
     """
@@ -141,8 +148,8 @@ def get_config(args, img='cifa100', txt='AG_NEWS'):
     
     return config
 
-def prepare_args(description: str, script=None):
-    parser = argparse.ArgumentParser(description=description)
+def prepare_args(description: str, script=None, is_vqa=False):
+    parser = argparse.ArgumentParser(description=description, is_vqa=is_vqa)
     add_args(parser)
     args = parser.parse_args()
     # wandb = init_wandb(args, script=script)

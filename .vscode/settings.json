@@ -6,6 +6,8 @@
         "crossfolds",
         "cudnn",
         "flickr",
+        "imagenet",
+        "inferencing",
         "interintra",
         "Jingjing",
         "mmdata",
