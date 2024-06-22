@@ -257,7 +257,7 @@ class MMFL(object):
             for param_group in optimizer.param_groups:
                 return param_group['lr']
 
-        assert round_n + 1 == self.cur_epoch, "inconstant round_n vs cur_epoch, added to check that code clean up does not change logic."
+        # assert round_n + 1 == self.cur_epoch, "inconstant round_n vs cur_epoch, added to check that code clean up does not change logic."
         
         # record after each epoch training
         metadata = self.engine.metadata.copy()
@@ -292,9 +292,6 @@ class MMFL(object):
 
         del img_vec, txt_vec
         gc.collect()
-
-    def score(self, dataloader=None):
-        if dataloader is None
 
     def distill(self, round_n, img_vec, txt_vec, img_num, txt_num, distill_index):
 

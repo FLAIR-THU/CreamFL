@@ -21,6 +21,7 @@
         "svhn",
         "tqdm",
         "trainloader",
+        "vocabs",
         "wandb",
         "Yimu"
     ]
