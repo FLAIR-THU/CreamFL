@@ -1,5 +1,7 @@
 import os
 
+from datasets import load_dataset, load_from_disk
+
 if __name__ == "__main__":
     import common
     args, wandb = common.prepare_args(
@@ -35,7 +37,12 @@ if __name__ == "__main__":
         
     # todo load vqa2 dataset
     print(f"loading vqa2 data set")
-    vqa2_dataset = None
+    vqa2_dataset = load_dataset("HuggingFaceM4/VQAv2")
+    vqa2_train = vqa2_dataset["train"]
+    print(f"vqa2 train dataset size {len(vqa2_train)}")
+    print(f"vqa2 train dataset columns {vqa2_train.column_names}")
+    print(f"vqa2 train dataset features {vqa2_train.features}")
+    print(f"vqa2 train dataset example {vqa2_train[0]}")
     num_classes = 4000
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')

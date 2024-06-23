@@ -6,6 +6,7 @@
         "crossfolds",
         "cudnn",
         "flickr",
+        "Graphcore",
         "imagenet",
         "inferencing",
         "interintra",
