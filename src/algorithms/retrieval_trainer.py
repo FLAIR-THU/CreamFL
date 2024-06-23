@@ -181,7 +181,7 @@ class EngineBase(object):
 
         state_dict = torch.load(state_dict_path, map_location='cpu')
 
-        vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
+        vocab_path = './src/custom_datasets/vocabs/coco_vocab.pkl'
         vocab = load_vocab(vocab_path)
         self.create(munch.munchify(state_dict['config']), vocab.word2idx, evaluator, False)
         if 'model' not in state_dict:

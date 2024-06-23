@@ -25,7 +25,7 @@ if __name__ == "__main__":
     if args.vqa_pretrained_base_model_eval:
         print(f"loading coco test set")
         dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
-        vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
+        vocab_path = './src/custom_datasets/vocabs/coco_vocab.pkl'
         from src.utils.config import parse_config
         config = parse_config("./src/coco.yaml", strict_cast=False)
         from src.utils.load_datasets import prepare_coco_dataloaders

@@ -185,7 +185,7 @@ class Language(data.Dataset):
         self.targets = np.array(self.targets)
 
         if not transform:
-            vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
+            vocab_path = './src/custom_datasets/vocabs/coco_vocab.pkl'
             if isinstance(vocab_path, str):
                 vocab = Vocabulary()
                 vocab.load_from_pickle(vocab_path)

@@ -114,7 +114,7 @@ class Client:
             
             self.trainer = MMClientTrainer(args, config, self.logger, client=data_partition_index, dset_name="flicker30k",
                                     device='cuda',
-                                    vocab_path='./src/datasets/vocabs/coco_vocab.pkl',
+                                    vocab_path='./src/custom_datasets/vocabs/coco_vocab.pkl',
                                     mlp_local=self.args.mlp_local)
         else:
             raise ValueError(f'client_config.data_type={data_type} is not implemented by federation.client.get_data_loader()')

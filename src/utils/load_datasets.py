@@ -115,10 +115,10 @@ def prepare_coco_dataloaders(dataloader_config,
 def _get_coco_file_paths(dataset_root):
     """Select proper train / val classes and omit id files.
     """
-    train_ids = np.load('./src/datasets/annotations/coco_train_ids.npy')
-    train_extra_ids = np.load('./src/datasets/annotations/coco_restval_ids.npy')
-    val_ids = np.load('./src/datasets/annotations/coco_dev_ids.npy')[:5000]
-    te_ids = np.load('./src/datasets/annotations/coco_test_ids.npy')
+    train_ids = np.load('./src/custom_datasets/annotations/coco_train_ids.npy')
+    train_extra_ids = np.load('./src/custom_datasets/annotations/coco_restval_ids.npy')
+    val_ids = np.load('./src/custom_datasets/annotations/coco_dev_ids.npy')[:5000]
+    te_ids = np.load('./src/custom_datasets/annotations/coco_test_ids.npy')
 
     image_root = os.path.join(dataset_root, 'allimages')
     train_ann = os.path.join(dataset_root, 'annotations/captions_train2014.json')

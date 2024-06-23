@@ -163,7 +163,7 @@ def get_api_url(context:Context):
     
 def get_global_dataloader(context:Context):
     dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
-    vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
+    vocab_path = './src/custom_datasets/vocabs/coco_vocab.pkl'
     return prepare_coco_dataloaders(context.config.dataloader, dataset_root, context.args.pub_data_num, context.args.max_size, vocab_path)
 
 def status_sleep(context, msg):

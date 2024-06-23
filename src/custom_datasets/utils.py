@@ -40,7 +40,7 @@ def image_to_caption_collate_fn(data):
     return images, targets, cap_lengths, ann_ids, image_ids, index
 
 
-def load_vocab(vocab_path='./src/datasets/vocabs/coco_vocab.pkl'):
+def load_vocab(vocab_path='./src/custom_datasets/vocabs/coco_vocab.pkl'):
     if isinstance(vocab_path, str):
         vocab = Vocabulary()
         vocab.load_from_pickle(vocab_path)
