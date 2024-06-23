@@ -1,5 +1,11 @@
 import argparse
 import os
+import sys
+
+sys.path.append("./")
+sys.path.append("../")
+sys.path.append("../../")
+sys.path.append("../../../")
 
 from src.utils.helper import Helper as helper
 from src.utils.config import parse_config
@@ -149,8 +155,8 @@ def get_config(args, img='cifa100', txt='AG_NEWS'):
     return config
 
 def prepare_args(description: str, script=None, is_vqa=False):
-    parser = argparse.ArgumentParser(description=description, is_vqa=is_vqa)
-    add_args(parser)
+    parser = argparse.ArgumentParser(description=description)
+    add_args(parser, is_vqa=is_vqa)
     args = parser.parse_args()
     # wandb = init_wandb(args, script=script)
     args.save_dirs = helper.get_save_dirs(args.exp_dir, args.name)

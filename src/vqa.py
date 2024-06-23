@@ -10,11 +10,13 @@ if __name__ == "__main__":
     print(f"loading pretrained img txt model from {base_path}. Full path {os.path.abspath(base_path)}")
     from src.algorithms.retrieval_trainer import TrainerEngine
     retrieval_engine = TrainerEngine()
+    print(f"  load COCOEvaluator")
     from src.algorithms.eval_coco import COCOEvaluator
     evaluator = COCOEvaluator(eval_method='matmul',
                             verbose=True,
                             eval_device='cuda',
                             n_crossfolds=5)
+    print(f"  load models2")
     retrieval_engine.load_models2("./sl2-best_model.pt", evaluator)
     retrieval_engine.model_to_device()
     
