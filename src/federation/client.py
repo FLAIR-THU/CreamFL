@@ -9,7 +9,7 @@ sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
 
-from src.datasets.load_FL_datasets import get_FL_trainloader
+from src.custom_datasets.load_FL_datasets import get_FL_trainloader
 from src.algorithms.ClientTrainer import ClientTrainer
 from src.algorithms.MMClientTrainer import MMClientTrainer
 from src.utils.color_lib import RGBmean, RGBstdv

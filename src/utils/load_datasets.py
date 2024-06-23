@@ -12,8 +12,8 @@ sys.path.append("../")
 sys.path.append("../..")
 sys.path.append("../../..")
 
-from src.datasets._dataloader import image_to_caption_collate_fn
-from src.datasets.coco import CocoCaptionsCap
+from src.custom_datasets._dataloader import image_to_caption_collate_fn
+from src.custom_datasets.coco import CocoCaptionsCap
 
 
 #  COCO

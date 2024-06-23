@@ -17,7 +17,7 @@ from torchtext.vocab import build_vocab_from_iterator
 from torchvision import transforms
 from tqdm import tqdm
 
-from src.datasets.vocab import Vocabulary
+from src.custom_datasets.vocab import Vocabulary
 
 
 def tokenize(sentence, vocab, caption_drop_prob):

@@ -7,7 +7,7 @@ from torchvision import datasets, transforms
 import torch
 import pickle
 
-from src.datasets.dataset_L import Language, caption_collate_fn
+from src.custom_datasets.dataset_L import Language, caption_collate_fn
 from src.utils.color_lib import RGBmean, RGBstdv
 
 # dataset: str, name of the dataset

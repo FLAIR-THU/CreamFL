@@ -10,8 +10,8 @@ from apex import amp
 from sklearn.metrics import pairwise_distances
 
 from src import losses
-from src.datasets.cifar import Cifar
-from src.datasets.dataset_L import caption_collate_fn, Language
+from src.custom_datasets.cifar import Cifar
+from src.custom_datasets.dataset_L import caption_collate_fn, Language
 from src.networks.language_model import EncoderText
 from src.networks.resnet_client import resnet18_client
 from src.utils.Reader import ImageReader

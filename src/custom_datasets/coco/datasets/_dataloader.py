@@ -12,11 +12,11 @@ import torch
 from torch.utils.data import DataLoader
 
 # try:
-from datasets.coco import CocoCaptionsCap
-from datasets.f30k import F30kCaptionsCap
-from datasets.cub import CUBCaption, CUBSampler
-from datasets.vocab import Vocabulary
-from datasets._transforms import imagenet_transform, caption_transform
+from custom_datasets.coco import CocoCaptionsCap
+from custom_datasets.f30k import F30kCaptionsCap
+from custom_datasets.cub import CUBCaption, CUBSampler
+from custom_datasets.vocab import Vocabulary
+from custom_datasets._transforms import imagenet_transform, caption_transform
 # except:
 #     from coco import CocoCaptionsCap
 #     from f30k import F30kCaptionsCap

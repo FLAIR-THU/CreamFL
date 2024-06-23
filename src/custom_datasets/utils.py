@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from src.datasets.vocab import Vocabulary
+from src.custom_datasets.vocab import Vocabulary
 # from datasets.coco_transforms import imagenet_transform, caption_transform
 
 def image_to_caption_collate_fn(data):

@@ -1,7 +1,7 @@
 import os
 
-from src.datasets.coco_transforms import caption_transform
-from src.datasets.vocab import Vocabulary
+from src.custom_datasets.coco_transforms import caption_transform
+from src.custom_datasets.vocab import Vocabulary
 
 try:
     import ujson as json

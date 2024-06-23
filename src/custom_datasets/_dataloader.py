@@ -12,11 +12,11 @@ import torch
 from torch.utils.data import DataLoader
 
 try:
-    from datasets.coco import CocoCaptionsCap
-    from datasets.flickr30k import F30kCaptionsCap
-    from datasets.cub import CUBCaption, CUBSampler
-    from datasets.vocab import Vocabulary
-    from datasets._transforms import imagenet_transform, caption_transform
+    from custom_datasets.coco import CocoCaptionsCap
+    from custom_datasets.flickr30k import F30kCaptionsCap
+    from custom_datasets.cub import CUBCaption, CUBSampler
+    from custom_datasets.vocab import Vocabulary
+    from custom_datasets._transforms import imagenet_transform, caption_transform
 except:
     try:
         from coco import CocoCaptionsCap
@@ -30,11 +30,11 @@ except:
         sys.path.append("../")
         sys.path.append("../../")
         sys.path.append("../../../")
-        from src.datasets.coco import CocoCaptionsCap
-        from src.datasets.flickr30k import F30kCaptionsCap
-        from src.datasets.cub import CUBCaption, CUBSampler
-        from src.datasets.vocab import Vocabulary
-        from src.datasets._transforms import imagenet_transform, caption_transform
+        from src.custom_datasets.coco import CocoCaptionsCap
+        from src.custom_datasets.flickr30k import F30kCaptionsCap
+        from src.custom_datasets.cub import CUBCaption, CUBSampler
+        from src.custom_datasets.vocab import Vocabulary
+        from src.custom_datasets._transforms import imagenet_transform, caption_transform
 
 
 def image_to_caption_collate_fn(data):

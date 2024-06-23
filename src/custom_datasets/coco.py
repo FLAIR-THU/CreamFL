@@ -10,8 +10,8 @@ import os
 import torch
 from torchvision import datasets
 
-from src.datasets.dataset_L import caption_transform
-from src.datasets.vocab import Vocabulary
+from src.custom_datasets.dataset_L import caption_transform
+from src.custom_datasets.vocab import Vocabulary
 
 try:
     import ujson as json

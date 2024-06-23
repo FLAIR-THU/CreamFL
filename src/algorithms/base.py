@@ -15,14 +15,14 @@ try:
     from src.algorithms.optimizers import get_optimizer, get_lr_scheduler
 
     from src.algorithms.eval_coco import COCOEvaluator
-    from src.datasets._dataloader import prepare_f30k_dataloaders, load_vocab
+    from src.custom_datasets._dataloader import prepare_f30k_dataloaders, load_vocab
 except ImportError:
     from ..criterions import get_criterion
     from ..networks.models import get_model
     from ..algorithms.optimizers import get_optimizer, get_lr_scheduler
 
     from eval_coco import COCOEvaluator
-    from ..datasets._dataloader import prepare_f30k_dataloaders, load_vocab
+    from ..custom_datasets._dataloader import prepare_f30k_dataloaders, load_vocab
 
 from ..utils.serialize_utils import torch_safe_load
 
