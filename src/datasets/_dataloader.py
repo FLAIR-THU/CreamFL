@@ -1,4 +1,4 @@
-"""libaray for multi-modal dataset loaders.
+"""library for multi-modal dataset loaders.
 
 Acknowledgements:
 `image_to_caption_collate_fn` is based on
@@ -25,6 +25,11 @@ except:
         from vocab import Vocabulary
         from _transforms import imagenet_transform, caption_transform
     except:
+        import sys
+        sys.path.append("./")
+        sys.path.append("../")
+        sys.path.append("../../")
+        sys.path.append("../../../")
         from src.datasets.coco import CocoCaptionsCap
         from src.datasets.flickr30k import F30kCaptionsCap
         from src.datasets.cub import CUBCaption, CUBSampler
