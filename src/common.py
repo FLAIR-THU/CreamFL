@@ -93,7 +93,7 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
     if is_vqa: # vqa only options
         parser.add_argument('--vqa_fusion_network', default='linear')
         parser.add_argument('--vqa_pretrained_base_model', default='./sl2-best_model.pt')
-        parser.add_argument('--vqa_pretrained_base_model_eval', default=True, 
+        parser.add_argument('--vqa_pretrained_eval', action='store_true', default=False,
                             help='check how good the base model is on the retrieval task to make sure we are loading a good model.')
 
 

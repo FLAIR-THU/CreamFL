@@ -22,7 +22,7 @@ if __name__ == "__main__":
     retrieval_engine.load_models2("./sl2-best_model.pt", evaluator)
     retrieval_engine.model_to_device()
     
-    if args.vqa_pretrained_base_model_eval:
+    if args.vqa_pretrained_eval:
         print(f"loading coco test set")
         dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
         vocab_path = './src/custom_datasets/vocabs/coco_vocab.pkl'
@@ -33,7 +33,9 @@ if __name__ == "__main__":
             config.dataloader, dataset_root, args.pub_data_num, args.max_size, vocab_path
         )
         test_dataloader = dataloaders['test']
+        print(f"evaluate coco test set")
         test_scores = retrieval_engine.evaluate({'test': test_dataloader})
+        print(f"test scores {test_scores}")
         
     # todo load vqa2 dataset
     print(f"loading vqa2 data set")
