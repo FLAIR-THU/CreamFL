@@ -118,7 +118,7 @@ if __name__ == "__main__":
             questions = batch['question']
             answers = batch['multiple_choice_answer']
             outputs = fusion_model.forward(images, [], questions, 0)
-            targets = [get_text_features(retrieval_model, answer) for answer in answers]
+            targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
             loss = F.cosine_similarity(outputs, targets)
             fusion_model.zero_grad()
             loss.backward()
