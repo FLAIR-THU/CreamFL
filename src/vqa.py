@@ -95,11 +95,6 @@ if __name__ == "__main__":
     
     print(f"loading vqa2 dataset")
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
-    #vqa2_train = vqa2_dataset["train"]
-    # print(f"vqa2 train dataset size {len(vqa2_train)}")
-    # print(f"vqa2 train dataset columns {vqa2_train.column_names}")
-    # print(f"vqa2 train dataset features {vqa2_train.features}")
-    # print(f"vqa2 train dataset example {vqa2_train[0]}")
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn)
 
     
@@ -118,7 +113,7 @@ if __name__ == "__main__":
             answers = batch['multiple_choice_answer']
             outputs = fusion_model.forward(images, [], questions, 0)
             targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
-            loss = F.cosine_similarity(outputs, targets)
+            loss = F.cosine_similarity(outputs, targets).mean()
             fusion_model.zero_grad()
             loss.backward()
             fusion_model.step()
