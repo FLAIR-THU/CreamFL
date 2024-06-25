@@ -99,7 +99,7 @@ if __name__ == "__main__":
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="test[:1000]")
-    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=32, collate_fn=collate_fn, num_workers=num_workers)
+    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=1, collate_fn=collate_fn, num_workers=num_workers)
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
         exit(1)
                 
-    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.00001)
     
     n = 0
     
@@ -139,8 +139,9 @@ if __name__ == "__main__":
                         outputs = fusion_model.forward(images, [], questions, 0)
                         for k, answer in enumerate(answers):
                             top_matches = get_matching_text(outputs[k], top_k=1)
-                            if answer in [match[1] for match in top_matches]:
+                            if answer == top_matches[0][1]:
                                 right += 1
+                        print(f"expected {answer}, got {top_matches}")
                         if j+1 >= 2**n:
                             break
                     accuracy = right / total
