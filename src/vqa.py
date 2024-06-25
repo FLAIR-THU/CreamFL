@@ -92,13 +92,14 @@ if __name__ == "__main__":
         test_scores = retrieval_engine.evaluate({'test': test_dataloader})
         print(f"test scores {test_scores}")
         
+    num_workers = 4
     
     print(f"loading vqa2 dataset")
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
-    vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn)
+    vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="test[:1000]")
-    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=32, collate_fn=collate_fn)
+    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=32, collate_fn=collate_fn, num_workers=num_workers)
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
@@ -128,18 +129,22 @@ if __name__ == "__main__":
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
                 
                 if (i+1+(epoch-1)*len(vqa2_dataloader)) % 64*2**n == 0:
-                    for j, testBatch in enumerate(vqa2_test_dataloader):
+                    right = 0
+                    total = 0
+                    for j, testBatch in tqdm(enumerate(vqa2_test_dataloader)):
                         images = testBatch['image'].to(device)
                         questions = testBatch['question']
                         answers = testBatch['multiple_choice_answer']
+                        total += len(answers)
                         outputs = fusion_model.forward(images, [], questions, 0)
-                        right = 0
                         for k, answer in enumerate(answers):
                             top_matches = get_matching_text(outputs[k], top_k=1)
                             if answer in [match[1] for match in top_matches]:
                                 right += 1
-                        accuracy = right / len(answers)
-                        print(f"test accuracy {accuracy} at epoch {epoch}, iter {i}/{len(vqa2_dataloader)}, loss {loss.item()}")
+                        if j > 2**n:
+                            break
+                    accuracy = right / total
+                    print(f"test accuracy {right}/{total}={accuracy} at epoch {epoch}, iter {i}/{len(vqa2_dataloader)}, loss {loss.item()}")
             
     
     
