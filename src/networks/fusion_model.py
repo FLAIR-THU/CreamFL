@@ -30,14 +30,18 @@ class LinearFusionModel(nn.Module):
     def forward(self, images, sentences, captions_word, lengths):
         device = next(self.base_model.parameters()).device  # Get the device of the model
         print(f"LinearFusionModel device {device}")
-        images = images.to(device)
-        sentences = [sentence.to(device) for sentence in sentences] if sentences else []
-        captions_word = captions_word.to(device)
-        lengths = lengths.to(device) if lengths else 0
+        print(f"  images device {images.device}")
+
+        #images = images.to(device)
+        #sentences = [sentence.to(device) for sentence in sentences] if sentences else []
+        #captions_word = captions_word.to(device)
+        #lengths = lengths.to(device) if lengths else 0
 
         outputs = self.base_model.forward(images, sentences, captions_word, lengths)
         image_features = outputs['image_features']
+        print(f"  image_features device {image_features.device}")
         caption_features = outputs['caption_features']
+        print(f"  caption_features device {caption_features.device}")
         fused_features = torch.cat((image_features, caption_features), dim=1)
         output = self.fc(fused_features)
         return output
