@@ -22,10 +22,10 @@ def freeze_model(m):
 #         return output
 
 class LinearFusionModel(nn.Module):
-    def __init__(self, base_model:PCME, num_classes):
+    def __init__(self, base_model:PCME):
         super(LinearFusionModel, self).__init__()
         self.base_model = base_model
-        self.fc = nn.Linear(base_model.embed_dim *2 , num_classes)
+        self.fc = nn.Linear(base_model.embed_dim *2 , base_model.embed_dim)
     
     def forward(self, images, sentences, captions_word, lengths):
         outputs = self.base_model.forward(images, sentences, captions_word, lengths)

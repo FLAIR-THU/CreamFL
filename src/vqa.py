@@ -1,6 +1,33 @@
 import os
+import heapq
 
 from datasets import load_dataset, load_from_disk
+import torch
+import torch.nn.functional as F
+from tqdm import tqdm
+
+from src.networks.fusion_model import freeze_model, LinearFusionModel
+
+text_retrieval_cache = {}
+@torch.no_grad()
+def get_text_features(engine, text):
+    global text_retrieval_cache
+    if text in text_retrieval_cache:
+        return text_retrieval_cache[text]
+    engine.eval()
+    text_retrieval_cache[text] = engine.text_forward([],text,0)
+    return text_retrieval_cache[text]
+
+def get_matching_text(features, loss_fn=F.cosine_similarity, top_k=5):
+    global text_retrieval_cache
+    min_heap = []  # Using a min heap to keep track of top matches
+    for text, text_features in text_retrieval_cache.items():
+        match_score = loss_fn(features, text_features)
+        heapq.heappush(min_heap, (-match_score, text))
+        if len(min_heap) > top_k:
+            heapq.heappop(min_heap)
+    top_matches = [(-score, text) for score, text in sorted(min_heap, reverse=True)]
+    return top_matches
 
 if __name__ == "__main__":
     import common
@@ -21,7 +48,10 @@ if __name__ == "__main__":
     print(f"  load models2")
     retrieval_engine.load_models2("./sl2-best_model.pt", evaluator)
     retrieval_engine.model_to_device()
-    
+    retrieval_model = retrieval_engine.model
+    freeze_model(retrieval_model)
+
+        
     if args.vqa_pretrained_eval:
         print(f"loading coco test set")
         dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
@@ -45,16 +75,29 @@ if __name__ == "__main__":
     print(f"vqa2 train dataset columns {vqa2_train.column_names}")
     print(f"vqa2 train dataset features {vqa2_train.features}")
     print(f"vqa2 train dataset example {vqa2_train[0]}")
-    num_classes = 4000
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
     if args.vqa_fusion_network == "linear":
-        from src.networks.fusion_model import LinearFusionModel
-        fusion_model = LinearFusionModel(retrieval_engine, num_classes)
+        fusion_model = LinearFusionModel(retrieval_model)
     else:
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
     
+    for epoch in range(1,6):
+        print(f"epoch {epoch}")
+        for i, example in tqdm(enumerate(vqa2_train), total=len(vqa2_train)):
+            image = example['image']
+            question = example['question']
+            answer = example['answers'][0]
+            output = fusion_model.forward(image, [], question, 0)
+            target = get_text_features(retrieval_engine, answer)
+            loss = F.cosine_similarity(output, target)
+            fusion_model.zero_grad()
+            loss.backward()
+            fusion_model.step()
+            
+            tqdm.write(f'Loss: {loss.item()}')
+            
     
     
     

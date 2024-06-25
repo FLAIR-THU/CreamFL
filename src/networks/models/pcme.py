@@ -37,16 +37,8 @@ class PCME(nn.Module):
             self.linear = nn.Linear(768, self.embed_dim)
 
     def forward(self, images, sentences, captions_word, lengths):
-        image_output = self.img_enc(images)
-        if self.config.not_bert:
-            caption_output = self.txt_enc(sentences, lengths)  # sentences: [128,  seq_len], lengths: 128
-        else:
-            inputs = self.tokenizer(captions_word, padding=True, return_tensors='pt')
-            for a in inputs:
-                inputs[a] = inputs[a].cuda()
-            caption_output = self.txt_enc(**inputs)
-            caption_output = {'embedding': l2_normalize(self.linear(caption_output['last_hidden_state'][:, 0, :]))}  # [bsz, 768]
-
+        image_output = self.image_forward(images)
+        caption_output = self.text_forward(sentences, captions_word, lengths)
         return {
             'image_features': image_output['embedding'],
             'image_attentions': image_output.get('attention'),
@@ -63,5 +55,16 @@ class PCME(nn.Module):
     def image_forward(self, images):
         return self.img_enc(images)
 
-    def text_forward(self, sentences, lengths):
+    def text_forward(self, sentences, captions_word, lengths):
+        if self.config.not_bert:
+            return self.txt_enc(sentences, lengths)  # sentences: [128,  seq_len], lengths: 128
+        else:
+            inputs = self.tokenizer(captions_word, padding=True, return_tensors='pt')
+            for a in inputs:
+                inputs[a] = inputs[a].cuda()
+            caption_output = self.txt_enc(**inputs)
+            return {'embedding': l2_normalize(self.linear(caption_output['last_hidden_state'][:, 0, :]))}  # [bsz, 768]
+
+    
+    def text_forward_old(self, sentences, lengths):
         return self.txt_enc(sentences, lengths)
