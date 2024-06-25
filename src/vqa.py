@@ -97,6 +97,8 @@ if __name__ == "__main__":
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn)
 
+    vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="test[:1000]")
+    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=32, collate_fn=collate_fn)
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
@@ -107,6 +109,8 @@ if __name__ == "__main__":
         exit(1)
                 
     optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.001)
+    
+    n = 0
     
     for epoch in range(1,6):
         print(f"epoch {epoch}")
@@ -122,6 +126,20 @@ if __name__ == "__main__":
                 loss.backward()
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
+                
+                if (i+1+(epoch-1)*len(vqa2_dataloader)) % 64*2**n == 0:
+                    for j, testBatch in enumerate(vqa2_test_dataloader):
+                        images = testBatch['image'].to(device)
+                        questions = testBatch['question']
+                        answers = testBatch['multiple_choice_answer']
+                        outputs = fusion_model.forward(images, [], questions, 0)
+                        right = 0
+                        for k, answer in enumerate(answers):
+                            top_matches = get_matching_text(outputs[k], top_k=1)
+                            if answer in [match[1] for match in top_matches]:
+                                right += 1
+                        accuracy = right / len(answers)
+                        print(f"test accuracy {accuracy} at epoch {epoch}, iter {i}/{len(vqa2_dataloader)}, loss {loss.item()}")
             
     
     
