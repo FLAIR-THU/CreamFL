@@ -104,20 +104,23 @@ if __name__ == "__main__":
         fusion_model = LinearFusionModel(retrieval_model)
     else:
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
+        exit(1)
+                
+    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.001)
     
     for epoch in range(1,6):
         print(f"epoch {epoch}")
         for i, batch in tqdm(enumerate(vqa2_dataloader), total=len(vqa2_dataloader)):
+            optimizer.zero_grad()
             images = batch['image'].to(device)
             questions = batch['question']
             answers = batch['multiple_choice_answer']
             outputs = fusion_model.forward(images, [], questions, 0)
             targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
             loss = F.cosine_similarity(outputs, targets).mean()
-            fusion_model.zero_grad()
+            tqdm.write(f'Loss: {loss.item()}')
             loss.backward()
-            fusion_model.step()
-            print(f'Loss: {loss.item()}')
+            optimizer.step()
             
     
     
