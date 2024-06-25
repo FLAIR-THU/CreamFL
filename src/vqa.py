@@ -128,7 +128,7 @@ if __name__ == "__main__":
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
                 
-                if (i+1+(epoch-1)*len(vqa2_dataloader)) % 64*2**n == 0:
+                if (i+1+(epoch-1)*len(vqa2_dataloader)) % 1024*2**n == 0:
                     right = 0
                     total = 0
                     for j, testBatch in tqdm(enumerate(vqa2_test_dataloader)):
@@ -141,7 +141,7 @@ if __name__ == "__main__":
                             top_matches = get_matching_text(outputs[k], top_k=1)
                             if answer in [match[1] for match in top_matches]:
                                 right += 1
-                        if j > 2**n:
+                        if j+1 >= 2**n:
                             break
                     accuracy = right / total
                     print(f"test accuracy {right}/{total}={accuracy} at epoch {epoch}, iter {i}/{len(vqa2_dataloader)}, loss {loss.item()}")
