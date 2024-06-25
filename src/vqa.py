@@ -6,6 +6,12 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
+import sys
+sys.path.append("./")
+sys.path.append("../")
+sys.path.append("../../")
+sys.path.append("../../../")
+
 from src.networks.fusion_model import freeze_model, LinearFusionModel
 
 text_retrieval_cache = {}
