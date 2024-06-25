@@ -28,6 +28,13 @@ class LinearFusionModel(nn.Module):
         self.fc = nn.Linear(base_model.embed_dim *2 , base_model.embed_dim)
     
     def forward(self, images, sentences, captions_word, lengths):
+        device = next(self.base_model.parameters()).device  # Get the device of the model
+        print(f"LinearFusionModel device {device}")
+        images = images.to(device)
+        sentences = [sentence.to(device) for sentence in sentences] if sentences else []
+        captions_word = captions_word.to(device)
+        lengths = lengths.to(device) if lengths else 0
+
         outputs = self.base_model.forward(images, sentences, captions_word, lengths)
         image_features = outputs['image_features']
         caption_features = outputs['caption_features']
