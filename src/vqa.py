@@ -110,17 +110,18 @@ if __name__ == "__main__":
     
     for epoch in range(1,6):
         print(f"epoch {epoch}")
-        for i, batch in tqdm(enumerate(vqa2_dataloader), total=len(vqa2_dataloader)):
-            optimizer.zero_grad()
-            images = batch['image'].to(device)
-            questions = batch['question']
-            answers = batch['multiple_choice_answer']
-            outputs = fusion_model.forward(images, [], questions, 0)
-            targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
-            loss = F.cosine_similarity(outputs, targets).mean()
-            tqdm.write(f'Loss: {loss.item()}')
-            loss.backward()
-            optimizer.step()
+        with tqdm(enumerate(vqa2_dataloader), total=len(vqa2_dataloader)) as progress_bar:
+            for i, batch in progress_bar:            
+                optimizer.zero_grad()
+                images = batch['image'].to(device)
+                questions = batch['question']
+                answers = batch['multiple_choice_answer']
+                outputs = fusion_model.forward(images, [], questions, 0)
+                targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
+                loss = 1 - F.cosine_similarity(outputs, targets).mean()
+                loss.backward()
+                optimizer.step()
+                progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
             
     
     
