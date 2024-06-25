@@ -1,10 +1,12 @@
 import os
 import heapq
+from tqdm import tqdm
 
 from datasets import load_dataset, load_from_disk
 import torch
 import torch.nn.functional as F
-from tqdm import tqdm
+from torch.utils.data import DataLoader
+from torchvision import transforms
 
 import sys
 sys.path.append("./")
@@ -13,6 +15,9 @@ sys.path.append("../../")
 sys.path.append("../../../")
 
 from src.networks.fusion_model import freeze_model, LinearFusionModel
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"device {device}")
 
 text_retrieval_cache = {}
 @torch.no_grad()
@@ -34,6 +39,20 @@ def get_matching_text(features, loss_fn=F.cosine_similarity, top_k=5):
             heapq.heappop(min_heap)
     top_matches = [(-score, text) for score, text in sorted(min_heap, reverse=True)]
     return top_matches
+
+transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224), # make all images the same size
+        transforms.ToTensor(),  # Converts image to tensor
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalizes tensor
+    ])
+
+def collate_fn(examples):
+    batch = {}
+    batch['image'] = torch.stack([transform(example['image']) for example in examples])
+    batch['question'] = [example['question'] for example in examples]
+    batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
+    return batch
 
 if __name__ == "__main__":
     import common
@@ -73,14 +92,16 @@ if __name__ == "__main__":
         test_scores = retrieval_engine.evaluate({'test': test_dataloader})
         print(f"test scores {test_scores}")
         
-    # todo load vqa2 dataset
-    print(f"loading vqa2 data set")
-    vqa2_dataset = load_dataset("HuggingFaceM4/VQAv2")
-    vqa2_train = vqa2_dataset["train"]
-    print(f"vqa2 train dataset size {len(vqa2_train)}")
-    print(f"vqa2 train dataset columns {vqa2_train.column_names}")
-    print(f"vqa2 train dataset features {vqa2_train.features}")
-    print(f"vqa2 train dataset example {vqa2_train[0]}")
+    
+    print(f"loading vqa2 dataset")
+    vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
+    #vqa2_train = vqa2_dataset["train"]
+    # print(f"vqa2 train dataset size {len(vqa2_train)}")
+    # print(f"vqa2 train dataset columns {vqa2_train.column_names}")
+    # print(f"vqa2 train dataset features {vqa2_train.features}")
+    # print(f"vqa2 train dataset example {vqa2_train[0]}")
+    vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn)
+
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
@@ -91,18 +112,17 @@ if __name__ == "__main__":
     
     for epoch in range(1,6):
         print(f"epoch {epoch}")
-        for i, example in tqdm(enumerate(vqa2_train), total=len(vqa2_train)):
-            image = example['image']
-            question = example['question']
-            answer = example['answers'][0]
-            output = fusion_model.forward(image, [], question, 0)
-            target = get_text_features(retrieval_engine, answer)
-            loss = F.cosine_similarity(output, target)
+        for i, batch in tqdm(enumerate(vqa2_dataloader), total=len(vqa2_dataloader)):
+            images = batch['image'].to(device)
+            questions = batch['question']
+            answers = batch['multiple_choice_answer']
+            outputs = fusion_model.forward(images, [], questions, 0)
+            targets = [get_text_features(retrieval_engine, answer) for answer in answers]
+            loss = F.cosine_similarity(outputs, targets)
             fusion_model.zero_grad()
             loss.backward()
             fusion_model.step()
-            
-            tqdm.write(f'Loss: {loss.item()}')
+            print(f'Loss: {loss.item()}')
             
     
     
