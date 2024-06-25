@@ -25,8 +25,7 @@ def get_text_features(engine, text):
     global text_retrieval_cache
     if text in text_retrieval_cache:
         return text_retrieval_cache[text]
-    engine.eval()
-    text_retrieval_cache[text] = engine.text_forward([],text,0)
+    text_retrieval_cache[text] = engine.text_forward([],text,0)['embedding']
     return text_retrieval_cache[text]
 
 def get_matching_text(features, loss_fn=F.cosine_similarity, top_k=5):
