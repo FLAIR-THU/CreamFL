@@ -138,10 +138,10 @@ if __name__ == "__main__":
                         total += len(answers)
                         outputs = fusion_model.forward(images, [], questions, 0)
                         for k, answer in enumerate(answers):
-                            top_matches = get_matching_text(outputs[k], top_k=1)
+                            top_matches = get_matching_text(outputs[k], top_k=5)
                             if answer == top_matches[0][1]:
                                 right += 1
-                        print(f"expected {answer}, got {top_matches}")
+                            print(f"expected {answer}, got {top_matches}")
                         if j+1 >= 2**n:
                             break
                     accuracy = right / total
