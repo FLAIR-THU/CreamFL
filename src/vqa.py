@@ -58,12 +58,8 @@ def get_category_by_id(cat_id):
     return category_list[cat_id]
 
 def set_category_from_dataset(dataset):
-    for item in dataset:
+    for item in dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']}):
         get_category_id(item['multiple_choice_answer'])
-
-def fill_category_list():
-    dataset = load_dataset("HuggingFaceM4/VQAv2", split="train", features=['multiple_choice_answer'])
-    set_category_from_dataset(dataset)
 
 transform = transforms.Compose([
         transforms.Resize(256),
@@ -122,7 +118,7 @@ if __name__ == "__main__":
     
     print(f"loading vqa2 dataset")
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
-    fill_category_list() # faster version of set_category_from_dataset(vqa2_train)
+    set_category_from_dataset(vqa2_train)
     print(f"category_list size:{len(category_list)}")
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
