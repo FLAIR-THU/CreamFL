@@ -46,19 +46,25 @@ unknown_category_id = 0
 
 category_list = []
 category_dict = {}
+category_counts = []
 @torch.no_grad()
 def get_category_id(cat, add_new=False):
     global category_list
     global category_dict
+    add_count = add_new # add count only when we are building the list of categories
     if len(category_list) == 0:
         category_dict[unknown_category] = unknown_category_id
         category_list.append(unknown_category)
+        category_counts.append(0)
     if cat in category_dict:
+        if add_count:
+            category_counts[category_dict[cat]] += 1
         return category_dict[cat]
     if not add_new:
         return unknown_category_id
     category_dict[cat] = len(category_list)
     category_list.append(cat)
+    category_counts.append(1)
     return category_dict[cat]
 
 @torch.no_grad()
@@ -84,10 +90,12 @@ def build_or_load_categories():
     global category_dict
     if len(category_list) != 0:
         raise Exception("categories already loaded")
-    fn = "vqa2_categories_common.pkl"
+    fn = "vqa2_categories_common_count.pkl"
     if os.path.exists(fn):
         with open(fn, "rb") as f:
-            category_list = pickle.load(f)
+            data = pickle.load(f)
+            category_list = data['category_list']
+            category_counts = data['category_counts']
             category_dict = {cat: i for i, cat in enumerate(category_list)}
         return
     # extract common categories from train and validation datasets
@@ -105,7 +113,8 @@ def build_or_load_categories():
             get_category_id(cat, add_new=True)
     print(f"common categories {len(category_list)}")
     with open(fn, "wb") as f:
-        pickle.dump(category_list, f)
+        data = {'category_list': category_list, 'category_counts': category_counts}
+        pickle.dump(data, f)
 
 transform = transforms.Compose([
         transforms.Resize(256),
@@ -166,6 +175,7 @@ if __name__ == "__main__":
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
     build_or_load_categories()
     print(f"category_list size:{len(category_list)}")
+    print(f"category_count:{category_counts[:10]}")
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:1000]")
@@ -178,7 +188,12 @@ if __name__ == "__main__":
     else:
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
         exit(1)
-                
+    
+    total_count = sum(category_counts)
+    category_weights = [total_count / class_count for class_count in category_counts]
+    weights_tensor = torch.tensor(category_weights).to(device)
+    loss_function = torch.nn.CrossEntropyLoss(weight=weights_tensor)     
+               
     optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.001)
     
     n = 0
@@ -192,9 +207,10 @@ if __name__ == "__main__":
                 questions = batch['question']
                 answers = batch['multiple_choice_answer']
                 outputs = fusion_model.forward(images, [], questions, 0)
-                targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
+                targets = torch.tensor([get_category_id(answer) for answer in answers]).to(device)
+                loss = loss_function(outputs, targets)
+                # targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
                 # loss = 1 - F.cosine_similarity(outputs, targets).mean()
-                loss = F.cross_entropy(outputs, torch.tensor([get_category_id(answer) for answer in answers]).to(device))
                 loss.backward()
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
