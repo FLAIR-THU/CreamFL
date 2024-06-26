@@ -86,7 +86,7 @@ def set_category_from_dataset(dataset):
     #for item in tqdm(dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})):
     #    get_category_id(item['multiple_choice_answer'])
     dataset = dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})
-    dataloader = DataLoader(dataset, batch_size=1024, num_workers=8,
+    dataloader = DataLoader(dataset, batch_size=1024, num_workers=16,
                             collate_fn=lambda examples: {'multiple_choice_answer': [example['multiple_choice_answer'] for example in examples]})
     set_category_from_dataloader(dataloader)
         
@@ -122,6 +122,8 @@ def build_or_load_categories():
         if cat in train_dict:
             cat_id = get_category_id(cat, add_new=True)
             category_counts[cat_id] = train_counts[train_dict[cat]]
+            if cat == unknown_category:
+                print(f"debug {cat} {cat_id} {category_counts[cat_id]}")
     print(f"common categories {len(category_list)}")
     with open(fn, "wb") as f:
         data = {'category_list': category_list, 'category_counts': category_counts}
@@ -180,12 +182,13 @@ if __name__ == "__main__":
         test_scores = retrieval_engine.evaluate({'test': test_dataloader})
         print(f"test scores {test_scores}")
         
-    num_workers = 4
+    num_workers = 8
     
     print(f"loading vqa2 dataset")
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
     build_or_load_categories()
     print(f"category_list size:{len(category_list)}")
+    print(f"category_list:{category_list[:10]}")
     print(f"category_count:{category_counts[:10]}")
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
