@@ -157,7 +157,7 @@ def process_retrieval_batch(batch):
     
     # Update the batch with the output (assuming batch_output is a dict with keys matching the expected output structure)
     for key in batch_output:
-        batch[key] = batch_output[key]
+        batch[key] = batch_output[key] if batch_output[key] is not None else torch.tensor([])
     
     # Remove the 'image' column from the batch
     del batch['image']
