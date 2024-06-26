@@ -147,6 +147,23 @@ def collate_fn(examples):
     batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
     return batch
 
+def process_retrieval_batch(batch):
+    # Transform and move the batch of images to the device
+    images = torch.stack([transform(image) for image in batch['image']]).to(device)
+    questions = batch['question']
+    
+    # Forward pass with the batch of images and questions
+    batch_output = retrieval_model.forward(images, [], questions, 0)
+    
+    # Update the batch with the output (assuming batch_output is a dict with keys matching the expected output structure)
+    for key in batch_output:
+        batch[key] = batch_output[key]
+    
+    # Remove the 'image' column from the batch
+    del batch['image']
+    
+    return batch
+
 if __name__ == "__main__":
     import common
     args, wandb = common.prepare_args(
@@ -196,13 +213,10 @@ if __name__ == "__main__":
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
     # precalculate the forward pass on the base retrieval model
     vqa2_train = vqa2_train.map(
-        lambda example: example.update(
-            retrieval_model.forward(
-                transform(example['image']).to(device),
-                [], example['question'], 0
-                )) or example,
-        remove_columns=['image'] # remove the image column to not decode it again
+        process_retrieval_batch,
+        batched=True, batch_size=32
     )
+    
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=128, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:1000]")
