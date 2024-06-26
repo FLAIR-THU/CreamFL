@@ -163,7 +163,7 @@ def process_retrieval_batch(batch):
     
     return batch
 
-def validation(fusion_model, validation_dataloader):
+def validation(n, fusion_model, validation_dataloader):
     right = 0
     unknown_outputs = 0
     unknown_answers = 0
@@ -173,7 +173,6 @@ def validation(fusion_model, validation_dataloader):
         images = testBatch['image'].to(device)
         questions = testBatch['question']
         answers = testBatch['multiple_choice_answer']
-        total += len(answers)
         outputs = fusion_model.forward(images, [], questions, 0)
         for k, answer in enumerate(answers):
             #top_matches = get_matching_text(outputs[k], top_k=5)
@@ -191,6 +190,7 @@ def validation(fusion_model, validation_dataloader):
                 unknown_unknown += 1
             if total + k < 8:
                 tqdm.write(f"j {j}, k {k}, expected {answer}, got {top_match_names}")
+        total += len(answers)
         if j >= n:
             break
     accuracy = right / total
@@ -268,9 +268,11 @@ if __name__ == "__main__":
     weights_tensor = torch.tensor(category_weights).to(device)
     loss_function = torch.nn.CrossEntropyLoss(weight=weights_tensor)     
                
-    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=args.vqa_lr)
     
     n = 0
+    
+    loss_avg = 0
     
     for epoch in range(1,6):
         print(f"epoch {epoch}")
@@ -281,23 +283,25 @@ if __name__ == "__main__":
                 answers = batch['multiple_choice_answer']
                 outputs = None
                 if 'image_features' in batch: # use precalculated features if available
-                    outputs = fusion_model.forward_fusion(batch['image_features'], batch['caption_features'])
+                    outputs = fusion_model.forward_fusion(
+                        batch['image_features'],
+                        batch['caption_features'])
                 else:
                     images = batch['image'].to(device)
                     outputs = fusion_model.forward(images, [], questions, 0)
                 targets = torch.tensor([get_category_id(answer) for answer in answers]).to(device)
                 loss = loss_function(outputs, targets)
+                loss_avg = (loss_avg * 999 + loss.item()) / 1000
                 # targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
                 # loss = 1 - F.cosine_similarity(outputs, targets).mean()
                 loss.backward()
                 optimizer.step()
-                progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
+                progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l1k: {loss_avg:.4f}")
                 
                 if (i+1+(epoch-1)*len(vqa2_dataloader)) % (128*2**n) == 0:
-                    validation(fusion_model, vqa2_test_dataloader)
+                    validation(n, fusion_model, vqa2_test_dataloader)
                     n += 1
-
-    validation(fusion_model, vqa2_test_dataloader)
+        validation(1000, fusion_model, vqa2_test_dataloader)
     
     
     
