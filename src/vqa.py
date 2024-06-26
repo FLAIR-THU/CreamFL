@@ -144,6 +144,7 @@ if __name__ == "__main__":
                             print(f"expected {answer}, got {top_matches}")
                         if j+1 >= 2**n:
                             break
+                    n += 1
                     accuracy = right / total
                     print(f"test accuracy {right}/{total}={accuracy} at epoch {epoch}, iter {i}/{len(vqa2_dataloader)}, loss {loss.item()}")
             
