@@ -119,7 +119,7 @@ def build_or_load_categories():
     reset_category_list()
     print(f"train categories {len(train_list)}, validation categories {len(validation_dict)}")
     unknowns = 0
-    for i, cat in train_list:
+    for i, cat in enumerate(train_list):
         if cat in validation_dict:
             cat_id = get_category_id(cat, add_new=True)
             category_counts[cat_id] = train_counts[i]
