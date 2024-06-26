@@ -154,11 +154,9 @@ def process_retrieval_batch(batch):
     
     # Forward pass with the batch of images and questions
     batch_output = retrieval_model.forward(images, [], questions, 0)
-    
-    # Update the batch with the output (assuming batch_output is a dict with keys matching the expected output structure)
-    for key in batch_output:
-        batch[key] = batch_output[key] if batch_output[key] is not None else torch.tensor([])
-    
+    batch['image_features'] = batch_output['image_features']
+    batch['caption_features'] = batch_output['caption_features']
+        
     # Remove the 'image' column from the batch
     del batch['image']
     
