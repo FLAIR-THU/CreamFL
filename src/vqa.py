@@ -225,7 +225,7 @@ if __name__ == "__main__":
                                 unknown_outputs += 1
                             if answer == unknown_category and top_match_names[0] == unknown_category:
                                 unknown_unknown += 1
-                            print(f"expected {answer}, got {top_matches}")
+                            print(f"expected {answer}, got {top_match_names}")
                         if j >= n:
                             break
                     n += 1
