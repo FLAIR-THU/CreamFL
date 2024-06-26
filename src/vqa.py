@@ -141,7 +141,8 @@ transform = transforms.Compose([
 
 def collate_fn(examples):
     batch = {}
-    batch['image'] = torch.stack([transform(example['image']) for example in examples])
+    if 'image' in examples[0]:
+        batch['image'] = torch.stack([transform(example['image']) for example in examples])
     batch['question'] = [example['question'] for example in examples]
     batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
     return batch
@@ -197,9 +198,10 @@ if __name__ == "__main__":
     vqa2_train = vqa2_train.map(
         lambda example: example.update(
             retrieval_model.forward(
-                example['image'].to(device),
+                transform(example['image']).to(device),
                 [], example['question'], 0
                 )) or example,
+        remove_columns=['image'] # remove the image column to not decode it again
     )
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=128, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
