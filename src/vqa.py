@@ -33,10 +33,10 @@ def get_matching_text(features, top_k=5):
     min_heap = []  # Using a min heap to keep track of top matches
     for text, text_features in text_retrieval_cache.items():
         match_score = F.cosine_similarity(features, text_features).item()
-        heapq.heappush(min_heap, (-match_score, text))
+        heapq.heappush(min_heap, (match_score, text))
         if len(min_heap) > top_k:
-            heapq.heappop(min_heap)
-    top_matches = [(-score, text) for score, text in sorted(min_heap, reverse=True)]
+            heapq.heappop(min_heap) # remove the worst score
+    top_matches = [(score, text) for score, text in sorted(min_heap, reverse=True)]
     return top_matches
 
 transform = transforms.Compose([

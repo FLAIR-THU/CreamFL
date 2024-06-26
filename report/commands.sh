@@ -6,5 +6,4 @@ export HF_DATASETS_CACHE="/shared/.cache/huggingface/datasets"
 
 cd /shared/project/xiegeo-dev/CreamFL
 
-git pull
-python src/vqa.py --seed 0
+git pull && python src/vqa.py --seed 0
