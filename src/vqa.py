@@ -58,9 +58,10 @@ def get_category_id(cat, add_new=False):
         category_list.append(unknown_category)
         category_counts.append(0)
     if cat in category_dict:
+        cat_id = category_dict[cat]
         if add_count:
-            category_counts[category_dict[cat]] += 1
-        return category_dict[cat]
+            category_counts[cat_id] += 1
+        return cat_id
     if not add_new:
         return unknown_category_id
     category_dict[cat] = len(category_list)
@@ -85,7 +86,7 @@ def set_category_from_dataset(dataset):
     #for item in tqdm(dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})):
     #    get_category_id(item['multiple_choice_answer'])
     dataset = dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})
-    dataloader = DataLoader(dataset, batch_size=1024, num_workers=num_workers,
+    dataloader = DataLoader(dataset, batch_size=1024, num_workers=8,
                             collate_fn=lambda examples: {'multiple_choice_answer': [example['multiple_choice_answer'] for example in examples]})
     set_category_from_dataloader(dataloader)
         
@@ -111,6 +112,7 @@ def build_or_load_categories():
     # extract common categories from train and validation datasets
     set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="train"))
     train_dict = category_dict
+    train_counts = category_counts
     reset_category_list()
     set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="validation"))
     validation_list = category_list
@@ -118,7 +120,8 @@ def build_or_load_categories():
     print(f"train categories {len(train_dict)}, validation categories {len(validation_list)}")
     for cat in validation_list:
         if cat in train_dict:
-            get_category_id(cat, add_new=True)
+            cat_id = get_category_id(cat, add_new=True)
+            category_counts[cat_id] = train_counts[train_dict[cat]]
     print(f"common categories {len(category_list)}")
     with open(fn, "wb") as f:
         data = {'category_list': category_list, 'category_counts': category_counts}
