@@ -1,5 +1,6 @@
 import os
 import heapq
+import pickle
 from tqdm import tqdm
 
 from datasets import load_dataset, load_from_disk
@@ -69,6 +70,21 @@ def set_category_from_dataloader(dataloader):
     for batch in tqdm(dataloader):
         for answer in batch['multiple_choice_answer']:
             get_category_id(answer)
+            
+def build_or_load_categories(dataset):
+    global category_list
+    global category_dict
+    if len(category_list) != 0:
+        raise Exception("categories already loaded")
+    fn = "vqa2_categories.pkl"
+    if os.path.exists(fn):
+        with open(fn, "rb") as f:
+            category_list = pickle.load(f)
+            category_dict = {cat: i for i, cat in enumerate(category_list)}
+        return
+    set_category_from_dataset(dataset)
+    with open(fn, "wb") as f:
+        pickle.dump(category_list, f)
 
 transform = transforms.Compose([
         transforms.Resize(256),
@@ -127,7 +143,7 @@ if __name__ == "__main__":
     
     print(f"loading vqa2 dataset")
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
-    set_category_from_dataset(vqa2_train)
+    build_or_load_categories(vqa2_train)
     print(f"category_list size:{len(category_list)}")
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
@@ -142,7 +158,7 @@ if __name__ == "__main__":
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
         exit(1)
                 
-    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.0001)
+    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.001)
     
     n = 0
     
