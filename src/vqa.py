@@ -86,7 +86,7 @@ def set_category_from_dataset(dataset):
     #for item in tqdm(dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})):
     #    get_category_id(item['multiple_choice_answer'])
     dataset = dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})
-    dataloader = DataLoader(dataset, batch_size=512, num_workers=64,
+    dataloader = DataLoader(dataset, batch_size=2048, num_workers=32,
                             collate_fn=lambda examples: {'multiple_choice_answer': [example['multiple_choice_answer'] for example in examples]})
     set_category_from_dataloader(dataloader)
         
@@ -117,7 +117,7 @@ def build_or_load_categories():
     set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="validation"))
     validation_dict = category_dict
     reset_category_list()
-    print(f"train categories {len(train_dict)}, validation categories {len(validation_list)}")
+    print(f"train categories {len(train_list)}, validation categories {len(validation_dict)}")
     unknowns = 0
     for i, cat in train_list:
         if cat in validation_dict:
