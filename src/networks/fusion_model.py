@@ -59,6 +59,10 @@ class LinearFusionModelCategorical(nn.Module):
         outputs = self.base_model.forward(images, sentences, captions_word, lengths)
         image_features = outputs['image_features']
         caption_features = outputs['caption_features']
+        return self.forward_fusion(image_features, caption_features)
+    
+    
+    
+    def forward_fusion(self, image_features, caption_features):
         fused_features = torch.cat((image_features, caption_features), dim=1)
-        output = self.classifier(fused_features)
-        return output
+        return self.classifier(fused_features)

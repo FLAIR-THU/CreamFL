@@ -185,14 +185,23 @@ if __name__ == "__main__":
         print(f"test scores {test_scores}")
         
     num_workers = 8
+    print(f"loading vqa2 categories and category weights")
+    build_or_load_categories()
+    print(f"  category_list size:{len(category_list)}")
+    print(f"  category_list:{category_list[:10]}")
+    print(f"  category_count:{category_counts[:10]}")
     
     print(f"loading vqa2 dataset")
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
-    build_or_load_categories()
-    print(f"category_list size:{len(category_list)}")
-    print(f"category_list:{category_list[:10]}")
-    print(f"category_count:{category_counts[:10]}")
-    vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
+    # precalculate the forward pass on the base retrieval model
+    vqa2_train = vqa2_train.map(
+        lambda example: example.update(
+            retrieval_model.forward(
+                example['image'].to(device),
+                [], example['question'], 0
+                )) or example,
+    )
+    vqa2_dataloader = DataLoader(vqa2_train, batch_size=128, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:1000]")
     vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=1, collate_fn=collate_fn, num_workers=num_workers)
@@ -223,7 +232,11 @@ if __name__ == "__main__":
                 images = batch['image'].to(device)
                 questions = batch['question']
                 answers = batch['multiple_choice_answer']
-                outputs = fusion_model.forward(images, [], questions, 0)
+                outputs = None
+                if 'image_features' in batch: # use precalculated features if available
+                    outputs = fusion_model.forward_fusion(batch['image_features'], batch['caption_features'])
+                else:
+                    outputs = fusion_model.forward(images, [], questions, 0)
                 targets = torch.tensor([get_category_id(answer) for answer in answers]).to(device)
                 loss = loss_function(outputs, targets)
                 # targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
