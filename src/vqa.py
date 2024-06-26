@@ -98,7 +98,7 @@ if __name__ == "__main__":
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
-    vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="test[:1000]")
+    vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:1000]")
     vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=1, collate_fn=collate_fn, num_workers=num_workers)
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
         exit(1)
                 
-    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.00001)
+    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=0.0001)
     
     n = 0
     
@@ -128,7 +128,7 @@ if __name__ == "__main__":
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
                 
-                if (i+1+(epoch-1)*len(vqa2_dataloader)) % 1024*2**n == 0:
+                if (i+1+(epoch-1)*len(vqa2_dataloader)) % 128*2**n == 0:
                     right = 0
                     total = 0
                     for j, testBatch in tqdm(enumerate(vqa2_test_dataloader)):
