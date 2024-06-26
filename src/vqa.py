@@ -211,10 +211,10 @@ if __name__ == "__main__":
     print(f"loading vqa2 dataset")
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
     # precalculate the forward pass on the base retrieval model
-    vqa2_train = vqa2_train.map(
-        process_retrieval_batch,
-        batched=True, batch_size=256,
-    )
+    # vqa2_train = vqa2_train.map(
+    #     process_retrieval_batch,
+    #     batched=True, batch_size=32,
+    # )
     
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=128, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
@@ -244,13 +244,13 @@ if __name__ == "__main__":
         with tqdm(enumerate(vqa2_dataloader), total=len(vqa2_dataloader)) as progress_bar:
             for i, batch in progress_bar:            
                 optimizer.zero_grad()
-                images = batch['image'].to(device)
                 questions = batch['question']
                 answers = batch['multiple_choice_answer']
                 outputs = None
                 if 'image_features' in batch: # use precalculated features if available
                     outputs = fusion_model.forward_fusion(batch['image_features'], batch['caption_features'])
                 else:
+                    images = batch['image'].to(device)
                     outputs = fusion_model.forward(images, [], questions, 0)
                 targets = torch.tensor([get_category_id(answer) for answer in answers]).to(device)
                 loss = loss_function(outputs, targets)
