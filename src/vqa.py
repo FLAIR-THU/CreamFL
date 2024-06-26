@@ -213,7 +213,7 @@ if __name__ == "__main__":
     # precalculate the forward pass on the base retrieval model
     vqa2_train = vqa2_train.map(
         process_retrieval_batch,
-        batched=True, batch_size=32
+        batched=True, batch_size=256,
     )
     
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=128, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
