@@ -163,6 +163,39 @@ def process_retrieval_batch(batch):
     
     return batch
 
+def validation(fusion_model, validation_dataloader):
+    right = 0
+    unknown_outputs = 0
+    unknown_answers = 0
+    unknown_unknown = 0
+    total = 0
+    for j, testBatch in tqdm(enumerate(validation_dataloader)):
+        images = testBatch['image'].to(device)
+        questions = testBatch['question']
+        answers = testBatch['multiple_choice_answer']
+        total += len(answers)
+        outputs = fusion_model.forward(images, [], questions, 0)
+        for k, answer in enumerate(answers):
+            #top_matches = get_matching_text(outputs[k], top_k=5)
+            #if answer == top_matches[0][1]:
+            #    right += 1
+            top_matches = torch.argsort(outputs[k], descending=True)[:5]
+            top_match_names = [get_category_by_id(cat_id.item()) for cat_id in top_matches]
+            if top_match_names[0] == answer:
+                right += 1
+            if answer == unknown_category:
+                unknown_answers += 1
+            if top_match_names[0] == unknown_category:
+                unknown_outputs += 1
+            if answer == unknown_category and top_match_names[0] == unknown_category:
+                unknown_unknown += 1
+            if total + k < 8:
+                tqdm.write(f"j {j}, k {k}, expected {answer}, got {top_match_names}")
+        if j >= n:
+            break
+    accuracy = right / total
+    tqdm.write(f"test accuracy {right}/{total}={accuracy}, unknown_answers:{unknown_answers}, unknown_outputs:{unknown_outputs}, unknown_unknown:{unknown_unknown}")
+
 if __name__ == "__main__":
     import common
     args, wandb = common.prepare_args(
@@ -219,7 +252,7 @@ if __name__ == "__main__":
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=128, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:1000]")
-    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=1, collate_fn=collate_fn, num_workers=num_workers)
+    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=32, collate_fn=collate_fn, num_workers=num_workers)
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
@@ -261,38 +294,10 @@ if __name__ == "__main__":
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
                 
                 if (i+1+(epoch-1)*len(vqa2_dataloader)) % (128*2**n) == 0:
-                    right = 0
-                    unknown_outputs = 0
-                    unknown_answers = 0
-                    unknown_unknown = 0
-                    total = 0
-                    for j, testBatch in tqdm(enumerate(vqa2_test_dataloader)):
-                        images = testBatch['image'].to(device)
-                        questions = testBatch['question']
-                        answers = testBatch['multiple_choice_answer']
-                        total += len(answers)
-                        outputs = fusion_model.forward(images, [], questions, 0)
-                        for k, answer in enumerate(answers):
-                            #top_matches = get_matching_text(outputs[k], top_k=5)
-                            #if answer == top_matches[0][1]:
-                            #    right += 1
-                            top_matches = torch.argsort(outputs[k], descending=True)[:5]
-                            top_match_names = [get_category_by_id(cat_id.item()) for cat_id in top_matches]
-                            if top_match_names[0] == answer:
-                                right += 1
-                            if answer == unknown_category:
-                                unknown_answers += 1
-                            if top_match_names[0] == unknown_category:
-                                unknown_outputs += 1
-                            if answer == unknown_category and top_match_names[0] == unknown_category:
-                                unknown_unknown += 1
-                            print(f"expected {answer}, got {top_match_names}")
-                        if j >= n:
-                            break
+                    validation(fusion_model, vqa2_test_dataloader)
                     n += 1
-                    accuracy = right / total
-                    print(f"test accuracy {right}/{total}={accuracy}, unknown_answers:{unknown_answers}, unknown_outputs:{unknown_outputs}, unknown_unknown:{unknown_unknown}, at epoch {epoch}, iter {i}/{len(vqa2_dataloader)}, loss {loss.item()}")
-            
+
+    validation(fusion_model, vqa2_test_dataloader)
     
     
     
