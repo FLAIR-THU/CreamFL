@@ -95,7 +95,7 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
         parser.add_argument('--vqa_pretrained_base_model', default='./sl2-best_model.pt')
         parser.add_argument('--vqa_pretrained_eval', action='store_true', default=False,
                             help='check how good the base model is on the retrieval task to make sure we are loading a good model.')
-        parser.add_argument('--vqa_hidden_sizes', nargs='+', type=int, default=[],
+        parser.add_argument('--vqa_hidden_sizes', nargs='*', type=int, default=[],
                         help='List of hidden layer sizes for the fusion network.')
         parser.add_argument('--vqa_epochs', type=int, default=10, help='Number of epochs to train the model.')
         parser.add_argument('--vqa_lr',  type=float, default=0.0002, help='Learning rate for the fusion network.')

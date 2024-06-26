@@ -263,7 +263,8 @@ if __name__ == "__main__":
         exit(1)
     
     total_count = sum(category_counts)
-    epsilon = 1e-8  # Small value to prevent division by zero
+    epsilon = 1000 # 1e-8  # Small value to prevent division by zero
+    total_count = total_count + epsilon * len(category_counts)
     category_weights = [total_count / (class_count + epsilon) for class_count in category_counts]
     weights_tensor = torch.tensor(category_weights).to(device)
     loss_function = torch.nn.CrossEntropyLoss(weight=weights_tensor)     
