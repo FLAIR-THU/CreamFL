@@ -28,11 +28,11 @@ def get_text_features(engine, text):
     text_retrieval_cache[text] = engine.text_forward([],text,0)['embedding']
     return text_retrieval_cache[text]
 
-def get_matching_text(features, loss_fn=F.cosine_similarity, top_k=5):
+def get_matching_text(features, top_k=5):
     global text_retrieval_cache
     min_heap = []  # Using a min heap to keep track of top matches
     for text, text_features in text_retrieval_cache.items():
-        match_score = loss_fn(features, text_features)
+        match_score = F.cosine_similarity(features, text_features).item()
         heapq.heappush(min_heap, (-match_score, text))
         if len(min_heap) > top_k:
             heapq.heappop(min_heap)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
                 
-                if (i+1+(epoch-1)*len(vqa2_dataloader)) % 128*2**n == 0:
+                if (i+1+(epoch-1)*len(vqa2_dataloader)) % (128*2**n) == 0:
                     right = 0
                     total = 0
                     for j, testBatch in tqdm(enumerate(vqa2_test_dataloader)):
