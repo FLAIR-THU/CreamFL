@@ -85,14 +85,14 @@ def get_category_by_id(cat_id):
 def set_category_from_dataset(dataset):
     #for item in tqdm(dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})):
     #    get_category_id(item['multiple_choice_answer'])
-    dataset = dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})
-    dataloader = DataLoader(dataset, batch_size=2048, num_workers=32,
-                            collate_fn=lambda examples: {'multiple_choice_answer': [example['multiple_choice_answer'] for example in examples]})
+    dataset = dataset.map(lambda example: example['multiple_choice_answer'])
+    dataloader = DataLoader(dataset, batch_size=2048, num_workers=16,
+                            collate_fn=lambda examples: examples)
     set_category_from_dataloader(dataloader)
         
 def set_category_from_dataloader(dataloader):
     for batch in tqdm(dataloader):
-        for answer in batch['multiple_choice_answer']:
+        for answer in batch:
             get_category_id(answer, add_new=True)
             
 def build_or_load_categories():
