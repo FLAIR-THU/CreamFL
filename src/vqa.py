@@ -147,6 +147,7 @@ def collate_fn(examples):
     batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
     return batch
 
+@torch.no_grad()
 def process_retrieval_batch(batch):
     # Transform and move the batch of images to the device
     images = torch.stack([transform(image) for image in batch['image']]).to(device)
