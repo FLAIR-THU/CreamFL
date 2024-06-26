@@ -41,14 +41,22 @@ def get_matching_text(features, top_k=5):
     top_matches = [(score, text) for score, text in sorted(min_heap, reverse=True)]
     return top_matches
 
+unknown_category = "<unknown>"
+unknown_category_id = 0
+
 category_list = []
 category_dict = {}
 @torch.no_grad()
-def get_category_id(cat):
+def get_category_id(cat, add_new=False):
     global category_list
     global category_dict
+    if len(category_list) == 0:
+        category_dict[unknown_category] = unknown_category_id
+        category_list.append(unknown_category)
     if cat in category_dict:
         return category_dict[cat]
+    if not add_new:
+        return unknown_category_id
     category_dict[cat] = len(category_list)
     category_list.append(cat)
     return category_dict[cat]
@@ -69,20 +77,33 @@ def set_category_from_dataset(dataset):
 def set_category_from_dataloader(dataloader):
     for batch in tqdm(dataloader):
         for answer in batch['multiple_choice_answer']:
-            get_category_id(answer)
+            get_category_id(answer, add_new=True)
             
-def build_or_load_categories(dataset):
+def build_or_load_categories():
     global category_list
     global category_dict
     if len(category_list) != 0:
         raise Exception("categories already loaded")
-    fn = "vqa2_categories.pkl"
+    fn = "vqa2_categories_common.pkl"
     if os.path.exists(fn):
         with open(fn, "rb") as f:
             category_list = pickle.load(f)
             category_dict = {cat: i for i, cat in enumerate(category_list)}
         return
-    set_category_from_dataset(dataset)
+    # extract common categories from train and validation datasets
+    set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="train"))
+    train_dict = category_dict
+    category_list = []
+    category_dict = {}
+    set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="validation"))
+    validation_list = category_list
+    category_list = []
+    category_dict = {}
+    print(f"train categories {len(train_dict)}, validation categories {len(validation_list)}")
+    for cat in validation_list:
+        if cat in train_dict:
+            get_category_id(cat, add_new=True)
+    print(f"common categories {len(category_list)}")
     with open(fn, "wb") as f:
         pickle.dump(category_list, f)
 
@@ -143,7 +164,7 @@ if __name__ == "__main__":
     
     print(f"loading vqa2 dataset")
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
-    build_or_load_categories(vqa2_train)
+    build_or_load_categories()
     print(f"category_list size:{len(category_list)}")
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
@@ -180,6 +201,9 @@ if __name__ == "__main__":
                 
                 if (i+1+(epoch-1)*len(vqa2_dataloader)) % (128*2**n) == 0:
                     right = 0
+                    unknown_outputs = 0
+                    unknown_answers = 0
+                    unknown_unknown = 0
                     total = 0
                     for j, testBatch in tqdm(enumerate(vqa2_test_dataloader)):
                         images = testBatch['image'].to(device)
@@ -192,14 +216,21 @@ if __name__ == "__main__":
                             #if answer == top_matches[0][1]:
                             #    right += 1
                             top_matches = torch.argsort(outputs[k], descending=True)[:5]
-                            if get_category_by_id(top_matches[0].item()) == answer:
+                            top_match_names = [get_category_by_id(cat_id.item()) for cat_id in top_matches]
+                            if top_match_names[0] == answer:
                                 right += 1
+                            if answer == unknown_category:
+                                unknown_answers += 1
+                            if top_match_names[0] == unknown_category:
+                                unknown_outputs += 1
+                            if answer == unknown_category and top_match_names[0] == unknown_category:
+                                unknown_unknown += 1
                             print(f"expected {answer}, got {top_matches}")
                         if j >= n:
                             break
                     n += 1
                     accuracy = right / total
-                    print(f"test accuracy {right}/{total}={accuracy} at epoch {epoch}, iter {i}/{len(vqa2_dataloader)}, loss {loss.item()}")
+                    print(f"test accuracy {right}/{total}={accuracy}, unknown_answers:{unknown_answers}, unknown_outputs:{unknown_outputs}, unknown_unknown:{unknown_unknown}, at epoch {epoch}, iter {i}/{len(vqa2_dataloader)}, loss {loss.item()}")
             
     
     
