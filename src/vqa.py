@@ -58,7 +58,7 @@ def get_category_by_id(cat_id):
     return category_list[cat_id]
 
 def set_category_from_dataset(dataset):
-    for item in dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']}):
+    for item in tqdm(dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})):
         get_category_id(item['multiple_choice_answer'])
 
 transform = transforms.Compose([
