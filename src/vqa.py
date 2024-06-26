@@ -61,7 +61,8 @@ def set_category_from_dataset(dataset):
     #for item in tqdm(dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})):
     #    get_category_id(item['multiple_choice_answer'])
     dataset = dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})
-    dataloader = DataLoader(dataset, batch_size=1024, num_workers=num_workers)
+    dataloader = DataLoader(dataset, batch_size=1024, num_workers=num_workers,
+                            collate_fn=lambda examples: {'multiple_choice_answer': [example['multiple_choice_answer'] for example in examples]})
     set_category_from_dataloader(dataloader)
         
 def set_category_from_dataloader(dataloader):
