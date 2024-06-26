@@ -51,6 +51,7 @@ category_counts = []
 def get_category_id(cat, add_new=False):
     global category_list
     global category_dict
+    global category_counts
     add_count = add_new # add count only when we are building the list of categories
     if len(category_list) == 0:
         category_dict[unknown_category] = unknown_category_id
@@ -88,6 +89,7 @@ def set_category_from_dataloader(dataloader):
 def build_or_load_categories():
     global category_list
     global category_dict
+    global category_counts
     if len(category_list) != 0:
         raise Exception("categories already loaded")
     fn = "vqa2_categories_common_count.pkl"
