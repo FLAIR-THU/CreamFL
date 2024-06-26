@@ -21,14 +21,13 @@ def freeze_model(m):
 #         output = self.fc(fused_features)
 #         return output
 
-class LinearFusionModel(nn.Module):
+class LinearFusionModelEmbedded(nn.Module):
     def __init__(self, base_model:PCME):
-        super(LinearFusionModel, self).__init__()
+        super(LinearFusionModelEmbedded, self).__init__()
         self.base_model = base_model
         device = next(self.base_model.parameters()).device 
         self.fc = nn.Linear(base_model.embed_dim *2 , base_model.embed_dim)
         self.to(device)
-        # print(f"LinearFusionModel device {device}")
     
     def forward(self, images, sentences, captions_word, lengths):
         outputs = self.base_model.forward(images, sentences, captions_word, lengths)
@@ -37,4 +36,19 @@ class LinearFusionModel(nn.Module):
         fused_features = torch.cat((image_features, caption_features), dim=1)
         output = self.fc(fused_features)
         return output
-        
+
+class LinearFusionModelCategorical(nn.Module):
+    def __init__(self, base_model:PCME, num_classes:int):
+        super(LinearFusionModelCategorical, self).__init__()
+        self.base_model = base_model
+        device = next(self.base_model.parameters()).device 
+        self.fc = nn.Linear(base_model.embed_dim *2, num_classes)
+        self.to(device)
+    
+    def forward(self, images, sentences, captions_word, lengths):
+        outputs = self.base_model.forward(images, sentences, captions_word, lengths)
+        image_features = outputs['image_features']
+        caption_features = outputs['caption_features']
+        fused_features = torch.cat((image_features, caption_features), dim=1)
+        output = self.fc(fused_features)
+        return output

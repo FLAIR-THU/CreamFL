@@ -14,7 +14,7 @@ sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
 
-from src.networks.fusion_model import freeze_model, LinearFusionModel
+from src.networks.fusion_model import freeze_model, LinearFusionModelCategorical
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"device {device}")
@@ -28,6 +28,7 @@ def get_text_features(engine, text):
     text_retrieval_cache[text] = engine.text_forward([],text,0)['embedding']
     return text_retrieval_cache[text]
 
+@torch.no_grad()
 def get_matching_text(features, top_k=5):
     global text_retrieval_cache
     min_heap = []  # Using a min heap to keep track of top matches
@@ -38,6 +39,29 @@ def get_matching_text(features, top_k=5):
             heapq.heappop(min_heap) # remove the worst score
     top_matches = [(score, text) for score, text in sorted(min_heap, reverse=True)]
     return top_matches
+
+category_list = []
+category_dict = {}
+@torch.no_grad()
+def get_category_id(cat):
+    global category_list
+    global category_dict
+    if cat in category_dict:
+        return category_dict[cat]
+    category_dict[cat] = len(category_list)
+    category_list.append(cat)
+    return category_dict[cat]
+
+@torch.no_grad()
+def get_category_by_id(cat_id):
+    global category_list
+    return category_list[cat_id]
+
+def set_category_from_dataset(dataset):
+    global category_list
+    global category_dict
+    for item in dataset:
+        get_category_id(item['multiple_choice_answer'])
 
 transform = transforms.Compose([
         transforms.Resize(256),
@@ -96,6 +120,8 @@ if __name__ == "__main__":
     
     print(f"loading vqa2 dataset")
     vqa2_train = load_dataset("HuggingFaceM4/VQAv2", split="train")
+    set_category_from_dataset(vqa2_train)
+    print(f"category_list size:{len(category_list)}")
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:1000]")
@@ -104,7 +130,7 @@ if __name__ == "__main__":
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
     if args.vqa_fusion_network == "linear":
-        fusion_model = LinearFusionModel(retrieval_model)
+        fusion_model = LinearFusionModelCategorical(retrieval_model, len(category_list)).to(device)
     else:
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
         exit(1)
@@ -123,7 +149,8 @@ if __name__ == "__main__":
                 answers = batch['multiple_choice_answer']
                 outputs = fusion_model.forward(images, [], questions, 0)
                 targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
-                loss = 1 - F.cosine_similarity(outputs, targets).mean()
+                # loss = 1 - F.cosine_similarity(outputs, targets).mean()
+                loss = F.cross_entropy(outputs, torch.tensor([get_category_id(answer) for answer in answers]).to(device))
                 loss.backward()
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, Loss: {loss.item():.4f}")
@@ -138,11 +165,14 @@ if __name__ == "__main__":
                         total += len(answers)
                         outputs = fusion_model.forward(images, [], questions, 0)
                         for k, answer in enumerate(answers):
-                            top_matches = get_matching_text(outputs[k], top_k=5)
-                            if answer == top_matches[0][1]:
+                            #top_matches = get_matching_text(outputs[k], top_k=5)
+                            #if answer == top_matches[0][1]:
+                            #    right += 1
+                            top_matches = torch.argsort(outputs[k], descending=True)[:5]
+                            if get_category_by_id(top_matches[0].item()) == answer:
                                 right += 1
                             print(f"expected {answer}, got {top_matches}")
-                        if j+1 >= 2**n:
+                        if j >= n:
                             break
                     n += 1
                     accuracy = right / total
