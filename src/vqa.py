@@ -68,6 +68,14 @@ def get_category_id(cat, add_new=False):
     category_counts.append(1)
     return category_dict[cat]
 
+def reset_category_list():
+    global category_list
+    global category_dict
+    global category_counts
+    category_list = []
+    category_dict = {}
+    category_counts = []
+
 @torch.no_grad()
 def get_category_by_id(cat_id):
     global category_list
@@ -103,12 +111,10 @@ def build_or_load_categories():
     # extract common categories from train and validation datasets
     set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="train"))
     train_dict = category_dict
-    category_list = []
-    category_dict = {}
+    reset_category_list()
     set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="validation"))
     validation_list = category_list
-    category_list = []
-    category_dict = {}
+    reset_category_list()
     print(f"train categories {len(train_dict)}, validation categories {len(validation_list)}")
     for cat in validation_list:
         if cat in train_dict:
