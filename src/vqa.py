@@ -86,7 +86,7 @@ def set_category_from_dataset(dataset):
     #for item in tqdm(dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})):
     #    get_category_id(item['multiple_choice_answer'])
     dataset = dataset.map(lambda example: {'multiple_choice_answer': example['multiple_choice_answer']})
-    dataloader = DataLoader(dataset, batch_size=1024, num_workers=16,
+    dataloader = DataLoader(dataset, batch_size=512, num_workers=64,
                             collate_fn=lambda examples: {'multiple_choice_answer': [example['multiple_choice_answer'] for example in examples]})
     set_category_from_dataloader(dataloader)
         
@@ -111,19 +111,21 @@ def build_or_load_categories():
         return
     # extract common categories from train and validation datasets
     set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="train"))
-    train_dict = category_dict
+    train_list = category_list
     train_counts = category_counts
     reset_category_list()
     set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="validation"))
-    validation_list = category_list
+    validation_dict = category_dict
     reset_category_list()
     print(f"train categories {len(train_dict)}, validation categories {len(validation_list)}")
-    for cat in validation_list:
-        if cat in train_dict:
+    unknowns = 0
+    for i, cat in train_list:
+        if cat in validation_dict:
             cat_id = get_category_id(cat, add_new=True)
-            category_counts[cat_id] = train_counts[train_dict[cat]]
-            if cat == unknown_category:
-                print(f"debug {cat} {cat_id} {category_counts[cat_id]}")
+            category_counts[cat_id] = train_counts[i]
+        else:
+            unknowns += train_counts[i]
+    category_counts[0] = unknowns
     print(f"common categories {len(category_list)}")
     with open(fn, "wb") as f:
         data = {'category_list': category_list, 'category_counts': category_counts}
