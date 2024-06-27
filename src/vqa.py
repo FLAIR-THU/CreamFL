@@ -273,6 +273,10 @@ if __name__ == "__main__":
                
     optimizer = torch.optim.Adam(fusion_model.parameters(), lr=args.vqa_lr, weight_decay=args.vqa_weight_decay)
     
+    if use_f16:
+        from apex import amp
+        fusion_model, optimizer = amp.initialize(fusion_model, optimizer, opt_level="O2")
+    
     n = 0
     
     loss_avg = 0
@@ -300,8 +304,11 @@ if __name__ == "__main__":
                 loss_avg = (loss_avg * 999 + loss.item()) / 1000
                 # targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
                 # loss = 1 - F.cosine_similarity(outputs, targets).mean()
-                
-                loss.backward()
+                if use_f16:
+                    with amp.scale_loss(loss, optimizer) as scaled_loss:
+                        scaled_loss.backward()
+                else:
+                    loss.backward()
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l1k: {loss_avg:.4f}")
                 
