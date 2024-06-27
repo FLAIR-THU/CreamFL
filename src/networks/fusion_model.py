@@ -44,7 +44,7 @@ class LinearFusionModelEmbedded(nn.Module):
         return output
     
 class LinearFusionModelCategorical(nn.Module):
-    def __init__(self, base_model: PCME, num_classes: int, hidden_sizes: list):
+    def __init__(self, base_model: PCME, num_classes: int, hidden_sizes: list, dropout_rate=0.5):
         super(LinearFusionModelCategorical, self).__init__()
         self.base_model = base_model
         self.frozen_base_model = True
@@ -54,11 +54,13 @@ class LinearFusionModelCategorical(nn.Module):
         layers = []
         input_size = base_model.embed_dim * 2  # Input size to the first hidden layer
         for hidden_size in hidden_sizes:
+            layers.append(nn.Dropout(dropout_rate))
             layers.append(nn.Linear(input_size, hidden_size))
             layers.append(nn.ReLU())
             input_size = hidden_size  # Update input size for the next layer
 
         # Add the final layer
+        layers.append(nn.Dropout(dropout_rate))
         layers.append(nn.Linear(input_size, num_classes))
         self.classifier = nn.Sequential(*layers)
         self.to(device)

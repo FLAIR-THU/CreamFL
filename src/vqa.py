@@ -22,7 +22,12 @@ print(f"device {device}")
 
 use_f16 = False
 if device == "cuda":
-    use_f16 = True
+    try:
+        from apex import amp
+        print("enable f16 and using apex.amp for mixed precision training")
+        use_f16 = True
+    except ImportError:
+        print('failed to import apex')
 
 text_retrieval_cache = {}
 @torch.no_grad()
@@ -195,7 +200,7 @@ def validation(n, fusion_model, validation_dataloader):
             if total + k < 8:
                 tqdm.write(f"j {j}, k {k}, expected {answer}, got {top_match_names}")
         total += len(answers)
-        if j >= n:
+        if total >= n:
             break
     accuracy = right / total
     tqdm.write(f"test accuracy {right}/{total}={accuracy}, unknown_answers:{unknown_answers}, unknown_outputs:{unknown_outputs}, unknown_unknown:{unknown_unknown}")
@@ -274,7 +279,6 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(fusion_model.parameters(), lr=args.vqa_lr, weight_decay=args.vqa_weight_decay)
     
     if use_f16:
-        from apex import amp
         fusion_model, optimizer = amp.initialize(fusion_model, optimizer, opt_level="O2")
     
     n = 0
@@ -301,7 +305,6 @@ if __name__ == "__main__":
                     outputs = fusion_model.forward(images, [], questions, 0)
                 targets = torch.tensor([get_category_id(answer) for answer in answers]).to(device)
                 loss = loss_function(outputs, targets)
-                loss_avg = (loss_avg * 999 + loss.item()) / 1000
                 # targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
                 # loss = 1 - F.cosine_similarity(outputs, targets).mean()
                 if use_f16:
@@ -309,6 +312,7 @@ if __name__ == "__main__":
                         scaled_loss.backward()
                 else:
                     loss.backward()
+                loss_avg = (loss_avg * 999 + loss.item()) / 1000
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l1k: {loss_avg:.4f}")
                 
