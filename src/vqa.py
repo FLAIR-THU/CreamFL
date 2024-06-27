@@ -15,7 +15,7 @@ sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
 
-from src.networks.fusion_model import freeze_model, LinearFusionModelCategorical
+from src.networks.fusion_model import LinearFusionModelCategorical
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"device {device}")
@@ -216,8 +216,6 @@ if __name__ == "__main__":
     retrieval_engine.load_models2("./sl2-best_model.pt", evaluator)
     retrieval_engine.model_to_device()
     retrieval_model = retrieval_engine.model
-    freeze_model(retrieval_model)
-
         
     if args.vqa_pretrained_eval:
         print(f"loading coco test set")
@@ -275,8 +273,11 @@ if __name__ == "__main__":
     
     loss_avg = 0
     
-    for epoch in range(1,6):
+    for epoch in range(1,args.vqa_epochs+1):
         print(f"epoch {epoch}")
+        if epoch >= args.vqa_unfreeze_base_epoch and fusion_model.frozen_base_model:
+            fusion_model.unfreeze_base_model()
+            print(f"unfreeze base model")
         with tqdm(enumerate(vqa2_dataloader), total=len(vqa2_dataloader)) as progress_bar:
             for i, batch in progress_bar:            
                 optimizer.zero_grad()
@@ -299,10 +300,10 @@ if __name__ == "__main__":
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l1k: {loss_avg:.4f}")
                 
-                if (i+1+(epoch-1)*len(vqa2_dataloader)) % (128*2**n) == 0:
-                    validation(n, fusion_model, vqa2_test_dataloader)
+                if epoch == 1 and (i+1+(epoch-1)*len(vqa2_dataloader)) % (128*2**n) == 0:
+                    validation(1000, fusion_model, vqa2_test_dataloader)
                     n += 1
-        validation(1000, fusion_model, vqa2_test_dataloader)
+        validation(10000, fusion_model, vqa2_test_dataloader)
     
     
     

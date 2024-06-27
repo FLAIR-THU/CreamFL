@@ -4,8 +4,14 @@ import torch.nn as nn
 from src.networks.models.pcme import PCME
 
 def freeze_model(m):
+    m.eval()
     for param in m.parameters():
         param.requires_grad = False
+        
+def unfreeze_model(m):
+    m.train()
+    for param in m.parameters():
+        param.requires_grad = True
 
 # class LinearFusionModel(nn.Module):
 #     def __init__(self, image_model, text_model, num_classes):
@@ -41,6 +47,8 @@ class LinearFusionModelCategorical(nn.Module):
     def __init__(self, base_model: PCME, num_classes: int, hidden_sizes: list):
         super(LinearFusionModelCategorical, self).__init__()
         self.base_model = base_model
+        self.frozen_base_model = True
+        freeze_model(base_model)
         device = next(self.base_model.parameters()).device
 
         layers = []
@@ -66,3 +74,7 @@ class LinearFusionModelCategorical(nn.Module):
     def forward_fusion(self, image_features, caption_features):
         fused_features = torch.cat((image_features, caption_features), dim=1)
         return self.classifier(fused_features)
+    
+    def unfreeze_base_model(self):
+        self.frozen_base_model = False
+        unfreeze_model(self.base_model)
