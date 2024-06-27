@@ -20,6 +20,10 @@ from src.networks.fusion_model import LinearFusionModelCategorical
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"device {device}")
 
+use_f16 = False
+if device == "cuda":
+    use_f16 = True
+
 text_retrieval_cache = {}
 @torch.no_grad()
 def get_text_features(engine, text):
@@ -267,7 +271,7 @@ if __name__ == "__main__":
     weights_tensor = torch.tensor(category_weights).to(device)
     loss_function = torch.nn.CrossEntropyLoss(weight=weights_tensor)     
                
-    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=args.vqa_lr, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=args.vqa_lr, weight_decay=args.vqa_weight_decay)
     
     n = 0
     
