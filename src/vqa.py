@@ -249,8 +249,8 @@ if __name__ == "__main__":
     
     vqa2_dataloader = DataLoader(vqa2_train, batch_size=128, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
 
-    vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:1000]")
-    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=32, collate_fn=collate_fn, num_workers=num_workers)
+    vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:10000]")
+    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=10, collate_fn=collate_fn, num_workers=num_workers)
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
@@ -267,7 +267,7 @@ if __name__ == "__main__":
     weights_tensor = torch.tensor(category_weights).to(device)
     loss_function = torch.nn.CrossEntropyLoss(weight=weights_tensor)     
                
-    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=args.vqa_lr)
+    optimizer = torch.optim.Adam(fusion_model.parameters(), lr=args.vqa_lr, weight_decay=1e-5)
     
     n = 0
     
@@ -296,6 +296,7 @@ if __name__ == "__main__":
                 loss_avg = (loss_avg * 999 + loss.item()) / 1000
                 # targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
                 # loss = 1 - F.cosine_similarity(outputs, targets).mean()
+                
                 loss.backward()
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l1k: {loss_avg:.4f}")
