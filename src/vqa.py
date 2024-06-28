@@ -148,13 +148,26 @@ transform = transforms.Compose([
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalizes tensor
     ])
 
-def collate_fn(examples):
-    batch = {}
-    if 'image' in examples[0]:
-        batch['image'] = torch.stack([transform(example['image']) for example in examples])
-    batch['question'] = [example['question'] for example in examples]
-    batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
-    return batch
+random_transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.RandomErasing(p=0.5, value='random', scale=(0.01, 0.10), ratio=(0.3, 3.3)),
+        transforms.RandomRotation(10),
+        transforms.RandomErasing(p=1, scale=(0.01, 0.10), ratio=(0.3, 3.3)),
+        transforms.RandomCrop(224), # make all images the same size
+        transforms.Grayscale(num_output_channels=3),  # Convert grayscale to RGB
+        transforms.ToTensor(),  # Converts image to tensor
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalizes tensor
+    ])
+
+def collate_fn(t=transform):
+    def func(examples):
+        batch = {}
+        if 'image' in examples[0]:
+            batch['image'] = torch.stack([t(example['image']) for example in examples])
+        batch['question'] = [example['question'] for example in examples]
+        batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
+        return batch
+    return func
 
 @torch.no_grad()
 def process_retrieval_batch(batch):
@@ -194,7 +207,7 @@ def validation(n, fusion_model, validation_dataloader):
                 right += 1
             if answer_id == unknown_category_id:
                 unknown_answers += 1
-                answer += unknown_category
+                answer = unknown_category + answer # mark answers not in the training set
             if top_matches[0] == unknown_category_id:
                 unknown_outputs += 1
             if answer_id == unknown_category_id and top_matches[0] == unknown_category_id:
@@ -263,10 +276,10 @@ if __name__ == "__main__":
     #     batched=True, batch_size=32,
     # )
     
-    vqa2_dataloader = DataLoader(vqa2_train, batch_size=512, shuffle=True, collate_fn=collate_fn, num_workers=num_workers)
+    vqa2_dataloader = DataLoader(vqa2_train, batch_size=512, shuffle=True, collate_fn=collate_fn(random_transform), num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:10000]")
-    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=100, collate_fn=collate_fn, num_workers=num_workers)
+    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=100, collate_fn=collate_fn(transform), num_workers=num_workers)
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
