@@ -44,7 +44,7 @@ class LinearFusionModelEmbedded(nn.Module):
         return output
     
 class LinearFusionModelCategorical(nn.Module):
-    def __init__(self, base_model: PCME, num_classes: int, hidden_sizes: list, dropout_rate=0.5):
+    def __init__(self, base_model: PCME, num_classes: int, hidden_sizes: list, dropout_rate=0.0):
         super(LinearFusionModelCategorical, self).__init__()
         self.base_model = base_model
         self.frozen_base_model = True

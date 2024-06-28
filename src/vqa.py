@@ -184,6 +184,7 @@ def validation(n, fusion_model, validation_dataloader):
         answers = testBatch['multiple_choice_answer']
         outputs = fusion_model.forward(images, [], questions, 0)
         for k, answer in enumerate(answers):
+            answer_id = get_category_id(answer)
             #top_matches = get_matching_text(outputs[k], top_k=5)
             #if answer == top_matches[0][1]:
             #    right += 1
@@ -191,11 +192,11 @@ def validation(n, fusion_model, validation_dataloader):
             top_match_names = [get_category_by_id(cat_id.item()) for cat_id in top_matches]
             if top_match_names[0] == answer:
                 right += 1
-            if answer == unknown_category:
+            if answer_id == unknown_category_id:
                 unknown_answers += 1
-            if top_match_names[0] == unknown_category:
+            if top_matches[0] == unknown_category_id:
                 unknown_outputs += 1
-            if answer == unknown_category and top_match_names[0] == unknown_category:
+            if answer_id == unknown_category_id and top_matches[0] == unknown_category_id:
                 unknown_unknown += 1
             if total + k < 8:
                 tqdm.write(f"j {j}, k {k}, expected {answer}, got {top_match_names}")
@@ -223,6 +224,8 @@ if __name__ == "__main__":
                             n_crossfolds=5)
     print(f"  load models2")
     retrieval_engine.load_models2("./sl2-best_model.pt", evaluator)
+    if use_f16:
+        retrieval_engine.to_half()
     retrieval_engine.model_to_device()
     retrieval_model = retrieval_engine.model
         

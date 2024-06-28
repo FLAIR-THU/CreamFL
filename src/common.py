@@ -101,6 +101,7 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
         parser.add_argument('--vqa_unfreeze_base_epoch', type=int, default=5, help='Epoch to unfreeze the base model.')
         parser.add_argument('--vqa_lr',  type=float, default=0.0002, help='Learning rate for the fusion network.')
         parser.add_argument('--vqa_weight_decay', type=float, default=0.0, help='Weight decay for the fusion network.')
+        parser.add_argument('--vqa_dropout', type=float, default=0.0, help='Dropout rate for the fusion network.')
 
 
 def init_wandb(args, script=None):
