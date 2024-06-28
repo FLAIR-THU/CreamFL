@@ -21,13 +21,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"device {device}")
 
 use_f16 = False
-if device == "cuda":
+if device == torch.device("cuda"):
     try:
         from apex import amp
         print("enable f16 and using apex.amp for mixed precision training")
         use_f16 = True
-    except ImportError:
-        print('failed to import apex')
+    except ImportError as e:
+        print('failed to import apex:', e)
 
 text_retrieval_cache = {}
 @torch.no_grad()
