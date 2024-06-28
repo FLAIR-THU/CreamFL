@@ -224,9 +224,9 @@ if __name__ == "__main__":
                             n_crossfolds=5)
     print(f"  load models2")
     retrieval_engine.load_models2("./sl2-best_model.pt", evaluator)
+    retrieval_engine.model_to_device()
     if use_f16:
         retrieval_engine.to_half()
-    retrieval_engine.model_to_device()
     retrieval_model = retrieval_engine.model
         
     if args.vqa_pretrained_eval:
