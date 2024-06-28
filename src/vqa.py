@@ -319,9 +319,9 @@ if __name__ == "__main__":
                         scaled_loss.backward()
                 else:
                     loss.backward()
-                loss_avg = (loss_avg * 999 + loss.item()) / 1000
+                loss_avg = (loss_avg * 99 + loss.item()) / 100
                 optimizer.step()
-                progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l1k: {loss_avg:.4f}")
+                progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l100: {loss_avg:.4f}")
                 
                 if epoch == 1 and (i+1+(epoch-1)*len(vqa2_dataloader)) % (128*2**n) == 0:
                     validation(1000, fusion_model, vqa2_test_dataloader)
