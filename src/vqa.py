@@ -245,6 +245,9 @@ if __name__ == "__main__":
         print(f"test scores {test_scores}")
         
     num_workers = 8
+    if use_f16:
+        num_workers = 16 # f16 requires more workers to keep the GPU busy
+    
     print(f"loading vqa2 categories and category weights")
     build_or_load_categories()
     print(f"  category_list size:{len(category_list)}")
