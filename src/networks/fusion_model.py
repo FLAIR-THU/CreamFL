@@ -4,10 +4,9 @@ from enum import Enum
 
 from src.networks.models.pcme import PCME
 
-# Define an enum
 class InputType(Enum):
-    A_B = 1
-    AxB = 2
+    A_B = 'A_B'
+    AxB = 'AxB'
 
 def freeze_model(m):
     m.eval()
