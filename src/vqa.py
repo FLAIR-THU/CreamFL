@@ -287,10 +287,13 @@ if __name__ == "__main__":
     #     batched=True, batch_size=32,
     # )
     
-    vqa2_dataloader = DataLoader(vqa2_train, batch_size=256, shuffle=True, collate_fn=collate_fn(random_transform), num_workers=num_workers)
+    vqa2_dataloader = DataLoader(vqa2_train, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn(random_transform), num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:10000]")
-    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=100, collate_fn=collate_fn(transform), num_workers=num_workers)
+    test_batch_size = 100
+    if args.batch_size < test_batch_size:
+        test_batch_size = 10
+    vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=test_batch_size, collate_fn=collate_fn(transform), num_workers=num_workers)
     
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None

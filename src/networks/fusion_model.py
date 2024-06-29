@@ -87,9 +87,9 @@ class LinearFusionModelCategorical(nn.Module):
     def forward_fusion(self, image_features, caption_features):
         #print(image_features.shape, caption_features.shape)
         fused_features = None 
-        if self.input_type == InputType.A_B:
+        if self.input_type == InputType.A_B: # Concatenation
             fused_features = torch.cat((image_features, caption_features), dim=1)
-        if self.input_type == InputType.AxB:
+        if self.input_type == InputType.AxB: # Element-wise multiplication
             fused_features = image_features * caption_features
         if fused_features is None:
             raise ValueError(f"input_type {self.input_type} is not supported in forward_fusion")
