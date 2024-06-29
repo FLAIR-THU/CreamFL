@@ -24,8 +24,8 @@ use_f16 = False
 if device == torch.device("cuda"):
     try:
         from apex import amp
-        print("enable f16 and using apex.amp for mixed precision training")
-        use_f16 = True
+        #print("enable f16 and using apex.amp for mixed precision training")
+        #use_f16 = True
     except ImportError as e:
         print('failed to import apex:', e)
 
