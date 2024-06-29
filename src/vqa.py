@@ -158,7 +158,7 @@ random_transform = transforms.Compose([
     ])
 
 def prepare_question(is_train,question):
-    return question # disable question transformation
+    #return question # disable question transformation
     if is_train:
         words = question.split()
         duplicated = words + words
