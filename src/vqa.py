@@ -231,7 +231,7 @@ def validation(n, fusion_model, validation_dataloader):
     tqdm.write(f"test accuracy {right}/{total}={accuracy}, unknown_answers:{unknown_answers}, unknown_outputs:{unknown_outputs}, unknown_unknown:{unknown_unknown}")
 
 if __name__ == "__main__":
-  with torch.autocast(device_type=device.type, dtype=torch.bfloat16):
+  #with torch.autocast(device_type=device.type):
     import common
     args, wandb = common.prepare_args(
         description="VQA for CreamFL Federated Learning (local simulation)",
