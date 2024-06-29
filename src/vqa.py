@@ -162,7 +162,7 @@ def prepare_question(is_train,question):
         words = question.split()
         duplicated = words + words
         for i in random.sample(range(len(duplicated)), random.randint(1, 3)):
-            duplicated[i] = "<unk>"
+            duplicated[i] = ""
         return " ".join(duplicated)
     return question + " " + question 
 
