@@ -102,6 +102,7 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
         parser.add_argument('--vqa_lr',  type=float, default=0.0002, help='Learning rate for the fusion network.')
         parser.add_argument('--vqa_weight_decay', type=float, default=0.0, help='Weight decay for the fusion network.')
         parser.add_argument('--vqa_dropout', type=float, default=0.0, help='Dropout rate for the fusion network.')
+        parser.add_argument('--vqa_input_type', type=str, default='A_B', choices=['A_B', 'AxB'],)
 
 
 def init_wandb(args, script=None):

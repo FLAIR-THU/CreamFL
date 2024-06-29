@@ -319,8 +319,9 @@ if __name__ == "__main__":
     for epoch in range(1,args.vqa_epochs+1):
         print(f"epoch {epoch}")
         if epoch >= args.vqa_unfreeze_base_epoch and fusion_model.frozen_base_model:
-            fusion_model.unfreeze_base_model()
             print(f"unfreeze base model")
+            fusion_model.unfreeze_base_model()
+            n = 0
         with tqdm(enumerate(vqa2_dataloader), total=len(vqa2_dataloader)) as progress_bar:
             for i, batch in progress_bar:            
                 optimizer.zero_grad()
@@ -343,7 +344,8 @@ if __name__ == "__main__":
                         scaled_loss.backward()
                 else:
                     loss.backward()
-                loss_avg = (loss_avg * 99 + loss.item()) / 100
+                loss_avg_rate = max(i, 99)
+                loss_avg = (loss_avg * loss_avg_rate + loss.item()) / (loss_avg_rate + 1)
                 optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l100: {loss_avg:.4f}")
                 

@@ -1,7 +1,13 @@
 import torch
 import torch.nn as nn
+from enum import Enum
 
 from src.networks.models.pcme import PCME
+
+# Define an enum
+class InputType(Enum):
+    A_B = 1
+    AxB = 2
 
 def freeze_model(m):
     m.eval()
@@ -42,17 +48,23 @@ class LinearFusionModelEmbedded(nn.Module):
         fused_features = torch.cat((image_features, caption_features), dim=1)
         output = self.fc(fused_features)
         return output
-    
+
+
+
 class LinearFusionModelCategorical(nn.Module):
-    def __init__(self, base_model: PCME, num_classes: int, hidden_sizes: list, dropout_rate=0.0):
+    def __init__(self, base_model: PCME, num_classes: int, hidden_sizes: list, input_type: InputType,
+                 dropout_rate=0.0):
         super(LinearFusionModelCategorical, self).__init__()
         self.base_model = base_model
+        self.input_type = input_type
         self.frozen_base_model = True
         freeze_model(base_model)
         device = next(self.base_model.parameters()).device
 
         layers = []
         input_size = base_model.embed_dim * 2  # Input size to the first hidden layer
+        if input_type == InputType.AxB:
+            input_size = base_model.embed_dim
         for hidden_size in hidden_sizes:
             layers.append(nn.Dropout(dropout_rate))
             layers.append(nn.Linear(input_size, hidden_size))
@@ -71,10 +83,11 @@ class LinearFusionModelCategorical(nn.Module):
         caption_features = outputs['caption_features']
         return self.forward_fusion(image_features, caption_features)
     
-    
-    
     def forward_fusion(self, image_features, caption_features):
-        fused_features = torch.cat((image_features, caption_features), dim=1)
+        if self.input_type == InputType.A_B:
+            fused_features = torch.cat((image_features, caption_features), dim=1)
+        if self.input_type == InputType.AxB:
+            fused_features = image_features * caption_features
         return self.classifier(fused_features)
     
     def unfreeze_base_model(self):
