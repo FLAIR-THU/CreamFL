@@ -158,6 +158,7 @@ random_transform = transforms.Compose([
     ])
 
 def prepare_question(is_train,question):
+    return question # disable question transformation
     if is_train:
         words = question.split()
         duplicated = words + words
@@ -268,7 +269,7 @@ if __name__ == "__main__":
         test_scores = retrieval_engine.evaluate({'test': test_dataloader})
         print(f"test scores {test_scores}")
         
-    num_workers = 8
+    num_workers = 16
     if use_f16:
         num_workers = 16 # f16 requires more workers to keep the GPU busy
     
@@ -286,7 +287,7 @@ if __name__ == "__main__":
     #     batched=True, batch_size=32,
     # )
     
-    vqa2_dataloader = DataLoader(vqa2_train, batch_size=128, shuffle=True, collate_fn=collate_fn(random_transform), num_workers=num_workers)
+    vqa2_dataloader = DataLoader(vqa2_train, batch_size=256, shuffle=True, collate_fn=collate_fn(random_transform), num_workers=num_workers)
 
     vqa2_test = load_dataset("HuggingFaceM4/VQAv2", split="validation[:10000]")
     vqa2_test_dataloader = DataLoader(vqa2_test, batch_size=100, collate_fn=collate_fn(transform), num_workers=num_workers)
