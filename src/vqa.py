@@ -161,9 +161,9 @@ def prepare_question(is_train,question):
     if is_train:
         words = question.split()
         duplicated = words + words
-        for i in random.sample(range(len(duplicated)), random.randint(1, 3)):
+        for i in random.sample(range(len(duplicated)), random.randint(0, 1)):
             duplicated[i] = ""
-        return " ".join(duplicated)
+        return " ".join(" ".join(duplicated).split())
     return question + " " + question 
 
 def collate_fn(is_train: bool):
