@@ -173,7 +173,7 @@ def collate_fn(is_train: bool):
         batch = {}
         if 'image' in examples[0]:
             batch['image'] = torch.stack([t(example['image']) for example in examples])
-        batch['question'] = [prepare_question(example['question']) for example in examples]
+        batch['question'] = [prepare_question(is_train,example['question']) for example in examples]
         batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
         return batch
     return func
