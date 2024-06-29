@@ -141,21 +141,21 @@ def build_or_load_categories():
         pickle.dump(data, f)
 
 transform = transforms.Compose([
+        transforms.ToTensor(),
         transforms.Resize(256),
         transforms.CenterCrop(224), # make all images the same size
         transforms.Grayscale(num_output_channels=3),  # Convert grayscale to RGB
-        transforms.ToTensor(),  # Converts image to tensor
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalizes tensor
     ])
 
 random_transform = transforms.Compose([
+        transforms.ToTensor(),
         transforms.Resize(256),
         transforms.RandomErasing(p=0.5, value='random', scale=(0.01, 0.10), ratio=(0.3, 3.3)),
         transforms.RandomRotation(10),
         transforms.RandomErasing(p=1, scale=(0.01, 0.10), ratio=(0.3, 3.3)),
         transforms.RandomCrop(224), # make all images the same size
         transforms.Grayscale(num_output_channels=3),  # Convert grayscale to RGB
-        transforms.ToTensor(),  # Converts image to tensor
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalizes tensor
     ])
 
