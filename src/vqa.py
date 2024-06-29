@@ -1,4 +1,5 @@
 import os
+import random
 import heapq
 import pickle
 from tqdm import tqdm
@@ -156,12 +157,23 @@ random_transform = transforms.Compose([
         transforms.RandomResizedCrop(224),
     ])
 
-def collate_fn(t=transform):
+def prepare_question(is_train,question):
+    if is_train:
+        words = question.split()
+        duplicated = words + words
+        for i in random.sample(range(len(duplicated)), random.randint(1, 3)):
+            duplicated[i] = "<unk>"
+        return " ".join(duplicated)
+    return question + " " + question 
+
+def collate_fn(is_train: bool):
+    t = random_transform if is_train else transform
+    
     def func(examples):
         batch = {}
         if 'image' in examples[0]:
             batch['image'] = torch.stack([t(example['image']) for example in examples])
-        batch['question'] = [example['question'] for example in examples]
+        batch['question'] = [prepare_question(example['question']) for example in examples]
         batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
         return batch
     return func
@@ -218,6 +230,7 @@ def validation(n, fusion_model, validation_dataloader):
     tqdm.write(f"test accuracy {right}/{total}={accuracy}, unknown_answers:{unknown_answers}, unknown_outputs:{unknown_outputs}, unknown_unknown:{unknown_unknown}")
 
 if __name__ == "__main__":
+  with torch.autocast(device_type=device.type):
     import common
     args, wandb = common.prepare_args(
         description="VQA for CreamFL Federated Learning (local simulation)",
