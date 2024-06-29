@@ -83,15 +83,15 @@ class LinearFusionModelCategorical(nn.Module):
         return self.forward_fusion(image_features, caption_features)
     
     def forward_fusion(self, image_features, caption_features):
+        print(image_features.shape, caption_features.shape)
         fused_features = None 
         if self.input_type == InputType.A_B:
             fused_features = torch.cat((image_features, caption_features), dim=1)
         if self.input_type == InputType.AxB:
-            print(image_features.shape, caption_features.shape)
             fused_features = image_features @ caption_features
-            print(fused_features.shape)
         if fused_features is None:
             raise ValueError(f"input_type {self.input_type} is not supported in forward_fusion")
+        print(fused_features.shape)
         return self.classifier(fused_features)
     
     def unfreeze_base_model(self):
