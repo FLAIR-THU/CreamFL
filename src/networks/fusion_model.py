@@ -56,7 +56,7 @@ class LinearFusionModelCategorical(nn.Module):
                  dropout_rate=0.0):
         super(LinearFusionModelCategorical, self).__init__()
         self.base_model = base_model
-        self.input_type = input_type
+        self.input_type = InputType(input_type)
         self.frozen_base_model = True
         freeze_model(base_model)
         device = next(self.base_model.parameters()).device
@@ -90,7 +90,7 @@ class LinearFusionModelCategorical(nn.Module):
         if self.input_type == InputType.AxB:
             fused_features = image_features * caption_features
         if fused_features is None:
-            raise ValueError("input_type {self.input_type} is not supported in forward_fusion")
+            raise ValueError(f"input_type {self.input_type} is not supported in forward_fusion")
         return self.classifier(fused_features)
     
     def unfreeze_base_model(self):
