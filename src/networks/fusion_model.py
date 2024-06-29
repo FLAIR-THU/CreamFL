@@ -54,8 +54,9 @@ class LinearFusionModelCategorical(nn.Module):
     def __init__(self, base_model: PCME, num_classes: int, hidden_sizes: list, input_type: InputType,
                  dropout_rate=0.0):
         super(LinearFusionModelCategorical, self).__init__()
-        self.base_model = base_model
-        self.input_type = InputType(input_type)
+        self.base_model = base_model    
+        input_type = InputType(input_type)
+        self.input_type = input_type
         self.frozen_base_model = True
         freeze_model(base_model)
         device = next(self.base_model.parameters()).device
@@ -64,6 +65,7 @@ class LinearFusionModelCategorical(nn.Module):
         input_size = base_model.embed_dim * 2  # Input size to the first hidden layer
         if input_type == InputType.AxB:
             input_size = base_model.embed_dim
+        #print(input_size)
         for hidden_size in hidden_sizes:
             layers.append(nn.Dropout(dropout_rate))
             layers.append(nn.Linear(input_size, hidden_size))
@@ -83,7 +85,7 @@ class LinearFusionModelCategorical(nn.Module):
         return self.forward_fusion(image_features, caption_features)
     
     def forward_fusion(self, image_features, caption_features):
-        print(image_features.shape, caption_features.shape)
+        #print(image_features.shape, caption_features.shape)
         fused_features = None 
         if self.input_type == InputType.A_B:
             fused_features = torch.cat((image_features, caption_features), dim=1)
@@ -91,7 +93,7 @@ class LinearFusionModelCategorical(nn.Module):
             fused_features = image_features @ caption_features
         if fused_features is None:
             raise ValueError(f"input_type {self.input_type} is not supported in forward_fusion")
-        print(fused_features.shape)
+        #print(fused_features.shape)
         return self.classifier(fused_features)
     
     def unfreeze_base_model(self):
