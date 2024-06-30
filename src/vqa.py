@@ -353,7 +353,7 @@ if __name__ == "__main__":
                 if 'image_features' in batch: # use precalculated features if available
                     outputs = fusion_model.forward_fusion(
                         [batch['image_features'],
-                        batch['caption_features']].extend(batch['sub_images'])
+                        batch['caption_features']].extend(batch['sub_images']))
                 else:
                     images = batch['image'].to(device)
                     sub_images = batch['sub_images'].to(device)
