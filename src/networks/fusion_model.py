@@ -82,7 +82,7 @@ class LinearFusionModelCategorical(nn.Module):
         outputs = self.base_model.forward(images, sentences, captions_word, lengths)
         sub_outputs = []
         for image in sub_images:
-            sub_outputs.append(self.base_model.image_forward(image))
+            sub_outputs.append(self.base_model.image_forward(image)['embedding'])
         image_features = outputs['image_features']
         caption_features = outputs['caption_features']
         
