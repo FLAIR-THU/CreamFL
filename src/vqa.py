@@ -157,15 +157,28 @@ random_transform = transforms.Compose([
         transforms.RandomResizedCrop(224),
     ])
 
+def split_image_into_4_parts(image):
+    width, height = image.size
+    mid_width, mid_height = width / 2, height / 2
+    overlap_width = width * 0.1 / 2
+    overlap_height = height * 0.1 / 2
+    
+    top_left = (0, 0, mid_width + overlap_width, mid_height + overlap_height)
+    top_right = (mid_width - overlap_width, 0, width, mid_height + overlap_height)
+    bottom_left = (0, mid_height - overlap_height, mid_width + overlap_width, height)
+    bottom_right = (mid_width - overlap_width, mid_height - overlap_height, width, height)
+    
+    return [image.crop(box) for box in [top_left, top_right, bottom_left, bottom_right]]
+
 def prepare_question(is_train,question):
-    #return question # disable question transformation
-    if is_train:
-        words = question.split()
-        duplicated = words + words
-        for i in random.sample(range(len(duplicated)), random.randint(0, 1)):
-            duplicated[i] = ""
-        return " ".join(" ".join(duplicated).split())
-    return question + " " + question 
+    return question # disable question transformation
+    # if is_train:
+    #     words = question.split()
+    #     duplicated = words + words
+    #     for i in random.sample(range(len(duplicated)), random.randint(0, 1)):
+    #         duplicated[i] = ""
+    #     return " ".join(" ".join(duplicated).split())
+    # return question + " " + question 
 
 def collate_fn(is_train: bool):
     t = random_transform if is_train else transform
@@ -174,6 +187,11 @@ def collate_fn(is_train: bool):
         batch = {}
         if 'image' in examples[0]:
             batch['image'] = torch.stack([t(example['image']) for example in examples])
+            batch['sub_images'] = torch.stack([
+                torch.stack([t(sub_image) 
+                    for sub_image in split_image_into_4_parts(example['image'])])
+                        for example in examples
+            ])
         batch['question'] = [prepare_question(is_train,example['question']) for example in examples]
         batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
         return batch
@@ -203,9 +221,10 @@ def validation(n, fusion_model, validation_dataloader):
     total = 0
     for j, testBatch in tqdm(enumerate(validation_dataloader)):
         images = testBatch['image'].to(device)
+        sub_images = testBatch['sub_images'].to(device)
         questions = testBatch['question']
         answers = testBatch['multiple_choice_answer']
-        outputs = fusion_model.forward(images, [], questions, 0)
+        outputs = fusion_model.forward(images,sub_images,[], questions, 0)
         for k, answer in enumerate(answers):
             answer_id = get_category_id(answer)
             #top_matches = get_matching_text(outputs[k], top_k=5)
@@ -298,7 +317,7 @@ if __name__ == "__main__":
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
     if args.vqa_fusion_network == "linear":
-        fusion_model = LinearFusionModelCategorical(retrieval_model, len(category_list), args.vqa_hidden_sizes, args.vqa_input_type).to(device)
+        fusion_model = LinearFusionModelCategorical(retrieval_model,2+4, len(category_list), args.vqa_hidden_sizes, args.vqa_input_type).to(device)
     else:
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
         exit(1)
@@ -333,11 +352,12 @@ if __name__ == "__main__":
                 outputs = None
                 if 'image_features' in batch: # use precalculated features if available
                     outputs = fusion_model.forward_fusion(
-                        batch['image_features'],
-                        batch['caption_features'])
+                        [batch['image_features'],
+                        batch['caption_features']].extend(batch['sub_images'])
                 else:
                     images = batch['image'].to(device)
-                    outputs = fusion_model.forward(images, [], questions, 0)
+                    sub_images = batch['sub_images'].to(device)
+                    outputs = fusion_model.forward(images,sub_images, [], questions, 0)
                 targets = torch.tensor([get_category_id(answer) for answer in answers]).to(device)
                 loss = loss_function(outputs, targets)
                 # targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)

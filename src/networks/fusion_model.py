@@ -51,7 +51,7 @@ class LinearFusionModelEmbedded(nn.Module):
 
 
 class LinearFusionModelCategorical(nn.Module):
-    def __init__(self, base_model: PCME, num_classes: int, hidden_sizes: list, input_type: InputType,
+    def __init__(self, base_model: PCME, num_features:int, num_classes: int, hidden_sizes: list, input_type: InputType,
                  dropout_rate=0.0):
         super(LinearFusionModelCategorical, self).__init__()
         self.base_model = base_model    
@@ -62,7 +62,7 @@ class LinearFusionModelCategorical(nn.Module):
         device = next(self.base_model.parameters()).device
 
         layers = []
-        input_size = base_model.embed_dim * 2  # Input size to the first hidden layer
+        input_size = base_model.embed_dim * num_features  # Input size to the first hidden layer
         if input_type == InputType.AxB:
             input_size = base_model.embed_dim
         #print(input_size)
@@ -78,19 +78,25 @@ class LinearFusionModelCategorical(nn.Module):
         self.classifier = nn.Sequential(*layers)
         self.to(device)
     
-    def forward(self, images, sentences, captions_word, lengths):
+    def forward(self, images, sub_images, sentences, captions_word, lengths):
         outputs = self.base_model.forward(images, sentences, captions_word, lengths)
+        sub_outputs = []
+        for image in sub_images:
+            sub_outputs.append(self.base_model.image_forward(image))
         image_features = outputs['image_features']
         caption_features = outputs['caption_features']
-        return self.forward_fusion(image_features, caption_features)
+        
+        return self.forward_fusion([image_features, caption_features].extend(sub_outputs))
     
-    def forward_fusion(self, image_features, caption_features):
+    def forward_fusion(self, features_list):
         #print(image_features.shape, caption_features.shape)
         fused_features = None 
         if self.input_type == InputType.A_B: # Concatenation
-            fused_features = torch.cat((image_features, caption_features), dim=1)
+            fused_features = torch.cat(features_list, dim=1)
         if self.input_type == InputType.AxB: # Element-wise multiplication
-            fused_features = image_features * caption_features
+            fused_features = features_list[0]
+            for i in range(1, len(features_list)):
+                fused_features = fused_features * features_list[i]
         if fused_features is None:
             raise ValueError(f"input_type {self.input_type} is not supported in forward_fusion")
         #print(fused_features.shape)
