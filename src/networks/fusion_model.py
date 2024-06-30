@@ -86,14 +86,16 @@ class LinearFusionModelCategorical(nn.Module):
         for image in sub_images:
             features = self.base_model.image_forward(image)['embedding']
             sub_outputs.append(features)
-        print(f'sub_outputs[0]: {sub_outputs[0].shape}')
         image_features = outputs['image_features']
         caption_features = outputs['caption_features']
-        
+        print(f'image_features: {image_features.shape} sub_outputs[0]: {sub_outputs[0].shape}')
+
         return self.forward_fusion([image_features, caption_features]+sub_outputs)
     
     def forward_fusion(self, features_list):
         #print(image_features.shape, caption_features.shape)
+        for i, tensor in enumerate(features_list):
+            print(f"Tensor {i} shape: {tensor.shape}")
         fused_features = None 
         if self.input_type == InputType.A_B: # Concatenation
             fused_features = torch.cat(features_list, dim=1)
