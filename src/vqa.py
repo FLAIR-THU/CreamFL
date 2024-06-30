@@ -206,7 +206,7 @@ def process_retrieval_batch(batch):
     questions = batch['question']
     
     # Forward pass with the batch of images and questions
-    batch_output = retrieval_model.forward(images, [], questions, 0)
+    batch_output, _ = retrieval_model.forward(images, [], questions, 0)
     batch['image_features'] = batch_output['image_features']
     batch['caption_features'] = batch_output['caption_features']
         
@@ -223,7 +223,7 @@ def validation(n, fusion_model, validation_dataloader):
     total = 0
     for j, testBatch in tqdm(enumerate(validation_dataloader)):
         answers = testBatch['multiple_choice_answer']
-        outputs = fusion_model.forward(testBatch)
+        outputs, _ = fusion_model.forward(testBatch)
         for k, answer in enumerate(answers):
             answer_id = get_category_id(answer)
             #top_matches = get_matching_text(outputs[k], top_k=5)
@@ -337,6 +337,8 @@ if __name__ == "__main__":
     
     loss_avg = 0
     
+    use_embed_loss = False
+    
     for epoch in range(1,args.vqa_epochs+1):
         print(f"epoch {epoch}")
         if epoch >= args.vqa_unfreeze_base_epoch and fusion_model.frozen_base_model:
@@ -346,12 +348,18 @@ if __name__ == "__main__":
         with tqdm(enumerate(vqa2_dataloader), total=len(vqa2_dataloader)) as progress_bar:
             for i, batch in progress_bar:            
                 optimizer.zero_grad()
-                outputs = fusion_model.forward(batch)
+                outputs, last_features = fusion_model.forward(batch)
                 answers = batch['multiple_choice_answer']
                 targets = torch.tensor([get_category_id(answer) for answer in answers]).to(device)
                 loss = loss_function(outputs, targets)
-                # targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)
-                # loss = 1 - F.cosine_similarity(outputs, targets).mean()
+                
+                if last_features.shape[1] == retrieval_model.embed_dim:
+                    if not use_embed_loss:
+                        progress_bar.write("using embedding loss") # only print once
+                        use_embed_loss = True
+                    target_last_features = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0).to(device)
+                    loss += 1 - F.cosine_similarity(last_features, target_last_features).mean()
+                
                 if use_f16:
                     with amp.scale_loss(loss, optimizer) as scaled_loss:
                         scaled_loss.backward()

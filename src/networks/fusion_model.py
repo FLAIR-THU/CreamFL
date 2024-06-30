@@ -71,11 +71,13 @@ class LinearFusionModelCategorical(nn.Module):
             layers.append(nn.Linear(input_size, hidden_size))
             layers.append(nn.ReLU())
             input_size = hidden_size  # Update input size for the next layer
+        self.features_extractor = nn.Sequential(*layers)
 
-        # Add the final layer
-        layers.append(nn.Dropout(dropout_rate))
-        layers.append(nn.Linear(input_size, num_classes))
-        self.classifier = nn.Sequential(*layers)
+        self.classifier_head = nn.Sequential(
+            nn.Dropout(dropout_rate),
+            nn.Linear(input_size, num_classes)  # Final classification layer
+        )
+        
         self.to(self.device)
     
     def forward(self, batch):
@@ -114,7 +116,8 @@ class LinearFusionModelCategorical(nn.Module):
         if fused_features is None:
             raise ValueError(f"input_type {self.input_type} is not supported in forward_fusion")
         #print(fused_features.shape)
-        return self.classifier(fused_features)
+        last_features = self.features_extractor(fused_features)
+        return self.classifier_head(last_features), last_features
     
     def unfreeze_base_model(self):
         self.frozen_base_model = False
