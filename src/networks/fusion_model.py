@@ -86,7 +86,7 @@ class LinearFusionModelCategorical(nn.Module):
         image_features = outputs['image_features']
         caption_features = outputs['caption_features']
         
-        return self.forward_fusion([image_features, caption_features].extend(sub_outputs))
+        return self.forward_fusion([image_features, caption_features]+sub_outputs)
     
     def forward_fusion(self, features_list):
         #print(image_features.shape, caption_features.shape)
