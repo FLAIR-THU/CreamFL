@@ -87,7 +87,7 @@ class LinearFusionModelCategorical(nn.Module):
         sub_images_features = self.base_model.image_forward(sub_images.view(-1, 3, 224, 224))['embedding']
         sub_images_features = sub_images_features.view(-1, 4, self.base_model.embed_dim).transpose(0, 1)
         #print(f'image_features: {image_features.shape} sub_images_features[0]: {sub_images_features[0].shape}')
-        return self.forward_fusion([image_features, caption_features]+sub_images_features)
+        return self.forward_fusion([image_features, caption_features]+[f for f in sub_images_features])
     
     def forward_fusion(self, features_list):
         #print(image_features.shape, caption_features.shape)
