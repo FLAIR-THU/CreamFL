@@ -193,6 +193,8 @@ def collate_fn(is_train: bool):
                         for example in examples
             ])
         batch['question'] = [prepare_question(is_train,example['question']) for example in examples]
+        batch['question_type'] = [example['question_type'] for example in examples]
+        batch['question_rest'] = [example['question'][len(example['question_type'])+1:] for example in examples]
         batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
         return batch
     return func
@@ -220,17 +222,14 @@ def validation(n, fusion_model, validation_dataloader):
     unknown_unknown = 0
     total = 0
     for j, testBatch in tqdm(enumerate(validation_dataloader)):
-        images = testBatch['image'].to(device)
-        sub_images = testBatch['sub_images'].to(device)
-        questions = testBatch['question']
         answers = testBatch['multiple_choice_answer']
-        outputs = fusion_model.forward(images,sub_images,[], questions, 0)
+        outputs = fusion_model.forward(testBatch)
         for k, answer in enumerate(answers):
             answer_id = get_category_id(answer)
             #top_matches = get_matching_text(outputs[k], top_k=5)
             #if answer == top_matches[0][1]:
             #    right += 1
-            top_matches = torch.argsort(outputs[k], descending=True)[:5]
+            _, top_matches = torch.topk(outputs[k], 5, largest=True, sorted=True)
             top_match_names = [get_category_by_id(cat_id.item()) for cat_id in top_matches]
             if top_match_names[0] == answer:
                 right += 1
@@ -347,17 +346,8 @@ if __name__ == "__main__":
         with tqdm(enumerate(vqa2_dataloader), total=len(vqa2_dataloader)) as progress_bar:
             for i, batch in progress_bar:            
                 optimizer.zero_grad()
-                questions = batch['question']
+                outputs = fusion_model.forward(batch)
                 answers = batch['multiple_choice_answer']
-                outputs = None
-                if 'image_features' in batch: # use precalculated features if available
-                    outputs = fusion_model.forward_fusion(
-                        [batch['image_features'],
-                        batch['caption_features']]+batch['sub_images'])
-                else:
-                    images = batch['image'].to(device)
-                    sub_images = batch['sub_images'].to(device)
-                    outputs = fusion_model.forward(images,sub_images, [], questions, 0)
                 targets = torch.tensor([get_category_id(answer) for answer in answers]).to(device)
                 loss = loss_function(outputs, targets)
                 # targets = torch.stack([get_text_features(retrieval_model, answer) for answer in answers], dim=0)

@@ -59,7 +59,7 @@ class LinearFusionModelCategorical(nn.Module):
         self.input_type = input_type
         self.frozen_base_model = True
         freeze_model(base_model)
-        device = next(self.base_model.parameters()).device
+        self.device = next(self.base_model.parameters()).device
 
         layers = []
         input_size = base_model.embed_dim * num_features  # Input size to the first hidden layer
@@ -76,18 +76,29 @@ class LinearFusionModelCategorical(nn.Module):
         layers.append(nn.Dropout(dropout_rate))
         layers.append(nn.Linear(input_size, num_classes))
         self.classifier = nn.Sequential(*layers)
-        self.to(device)
+        self.to(self.device)
     
-    def forward(self, images, sub_images, sentences, captions_word, lengths):
+    def forward(self, batch):
+        questions = batch['question']
+        outputs = None
+        if 'image_features' in batch: # use precalculated features if available
+            outputs = self.forward_fusion(
+                [batch['image_features'],
+                batch['caption_features']]+batch['sub_images'])
+        else:
+            images = batch['image'].to(self.device)
+            sub_images = batch['sub_images'].to(self.device)
         #print(f'types images: {type(images)}, sub_images: {type(sub_images)}')
         #print(f'shapes images: {images.shape}, sub_images: {sub_images.shape}')
-        outputs = self.base_model.forward(images, sentences, captions_word, lengths)
+        outputs = self.base_model.forward(images, [], questions, 0)
         image_features = outputs['image_features']
         caption_features = outputs['caption_features']
         sub_images_features = self.base_model.image_forward(sub_images.view(-1, 3, 224, 224))['embedding']
         sub_images_features = sub_images_features.view(-1, 4, self.base_model.embed_dim).transpose(0, 1)
+        question_type_features = self.base_model.text_forward([], batch['question_type'], 0)['embedding']
+        question_rest_features = self.base_model.text_forward([], batch['question_rest'], 0)['embedding']
         #print(f'image_features: {image_features.shape} sub_images_features[0]: {sub_images_features[0].shape}')
-        return self.forward_fusion([image_features, caption_features]+[f for f in sub_images_features])
+        return self.forward_fusion([image_features, caption_features, question_type_features, question_rest_features]+[f for f in sub_images_features])
     
     def forward_fusion(self, features_list):
         #print(image_features.shape, caption_features.shape)
