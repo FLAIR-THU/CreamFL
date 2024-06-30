@@ -79,7 +79,8 @@ class LinearFusionModelCategorical(nn.Module):
         self.to(device)
     
     def forward(self, images, sub_images, sentences, captions_word, lengths):
-        print(f'images: {images.shape}, sub_images: {sub_images.shape} captions_word: {captions_word.shape}')
+        print(f'types images: {type(images)}, sub_images: {type(sub_images)}')
+        print(f'shapes images: {images.shape}, sub_images: {sub_images.shape}')
         outputs = self.base_model.forward(images, sentences, captions_word, lengths)
         sub_outputs = []
         for image in sub_images:
