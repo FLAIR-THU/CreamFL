@@ -101,8 +101,8 @@ class VQAFusionModel(nn.Module):
         return self.forward_fusion([image_features]+[f for f in sub_images_features], [caption_features, question_type_features, question_rest_features])
 
     def forward_fusion(self, image_features, text_features):
-        image_features = self.image_in(image_features)
-        text_features = self.text_in(text_features)
+        image_features = self.image_in(torch.cat(image_features, dim=1))
+        text_features = self.text_in(torch.cat(text_features, dim=1))
         fused_features = image_features * text_features
         last_features = self.features_extractor(fused_features)
         return self.classifier_head(last_features), last_features
