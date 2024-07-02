@@ -6,7 +6,7 @@ export HF_DATASETS_CACHE="/shared/.cache/huggingface/datasets"
 
 cd /shared/project/xiegeo-dev/CreamFL
 
-git pull && python src/vqa.py --seed 0 --vqa_hidden_sizes 2048 1024 1024 --vqa_unfreeze_base_epoch 25 --vqa_weight_decay 0.00001 --vqa_epochs 30 --batch_size 64
+git pull && python src/vqa.py --seed 0 --vqa_hidden_sizes 1024 --vqa_unfreeze_base_epoch 25 --vqa_weight_decay 0.00001 --vqa_epochs 30 --batch_size 64
 
 
 #vqa_pretrained_eval:

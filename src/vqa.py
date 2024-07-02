@@ -348,7 +348,7 @@ if __name__ == "__main__":
     if args.vqa_fusion_network == "linear":
         fusion_model = LinearFusionModelCategorical(retrieval_model,2+4+2, len(category_list), args.vqa_hidden_sizes, args.vqa_input_type,dropout_rate=args.vqa_dropout).to(device)
     elif args.vqa_fusion_network == "vqa1":
-        fusion_model = VQAFusionModel(retrieval_model,4,3, len(category_list), args.vqa_hidden_sizes, dropout_rate=args.vqa_dropout).to(device)
+        fusion_model = VQAFusionModel(retrieval_model,5,3, len(category_list), args.vqa_hidden_sizes, dropout_rate=args.vqa_dropout).to(device)
     else:
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
         exit(1)
