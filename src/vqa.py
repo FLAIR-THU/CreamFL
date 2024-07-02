@@ -16,7 +16,7 @@ sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
 
-from src.networks.fusion_model import LinearFusionModelCategorical
+from src.networks.fusion_model import LinearFusionModelCategorical, VQAFusionModel
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"device {device}")
@@ -105,6 +105,36 @@ def set_category_from_dataloader(dataloader):
         for answer in batch['multiple_choice_answer']:
             get_category_id(answer, add_new=True)
             
+def build_or_load_categories_top(top = 3000):
+    global category_list
+    global category_dict
+    global category_counts
+    if len(category_list) != 0:
+        raise Exception("categories already loaded")
+    fn = f"vqa2_categories_{top}.pkl"
+    if os.path.exists(fn):
+        with open(fn, "rb") as f:
+            data = pickle.load(f)
+            category_list = data['category_list']
+            category_counts = data['category_counts']
+            category_dict = {cat: i for i, cat in enumerate(category_list)}
+        return
+    # extract common categories from train and validation datasets
+    set_category_from_dataset(load_dataset("HuggingFaceM4/VQAv2", split="train"))
+    cutoff = heapq.nlargest(top, category_counts)[-1]
+    train_list = category_list
+    train_counts = category_counts
+    reset_category_list()
+    for i, cat in enumerate(train_list):
+        if train_counts[i] >= cutoff:
+            id = get_category_id(cat, add_new=True)
+            category_counts[id] = train_counts[i]
+    assert len(category_list) == top + 1 # top categories + 1 unknown
+    with open(fn, "wb") as f:
+        data = {'category_list': category_list, 'category_counts': category_counts}
+        pickle.dump(data, f)
+
+    
 def build_or_load_categories():
     global category_list
     global category_dict
@@ -316,7 +346,9 @@ if __name__ == "__main__":
     print(f'init vqa fusion model "{args.vqa_fusion_network}"')
     fusion_model = None
     if args.vqa_fusion_network == "linear":
-        fusion_model = LinearFusionModelCategorical(retrieval_model,2+4+2, len(category_list), args.vqa_hidden_sizes, args.vqa_input_type).to(device)
+        fusion_model = LinearFusionModelCategorical(retrieval_model,2+4+2, len(category_list), args.vqa_hidden_sizes, args.vqa_input_type,dropout_rate=args.vqa_dropout).to(device)
+    if args.vqa_fusion_network == "vqa1":
+        fusion_model = VQAFusionModel(retrieval_model,4,3, len(category_list), args.vqa_hidden_sizes, dropout_rate=args.vqa_dropout).to(device)
     else:
         print(f'vqa_fusion_network "{args.vqa_fusion_network}" is not supported')
         exit(1)

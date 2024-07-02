@@ -47,9 +47,70 @@ class LinearFusionModelEmbedded(nn.Module):
         fused_features = torch.cat((image_features, caption_features), dim=1)
         output = self.fc(fused_features)
         return output
+    
+class VQAFusionModel(nn.Module):
+    def __init__(self, base_model: PCME, img_features:int, txt_features:int, num_classes: int, hidden_sizes: list,
+                 dropout_rate=0.0):
+        super(VQAFusionModel, self).__init__()
+        self.base_model = base_model
+        self.frozen_base_model = True
+        freeze_model(base_model)
+        self.device = next(self.base_model.parameters()).device
+        
+        cross_size = hidden_sizes[0]
+        
+        self.image_in = nn.Linear(img_features * base_model.embed_dim, cross_size)
+        self.text_in = nn.Linear(txt_features * base_model.embed_dim, cross_size)
+        
+        layers = []
+        for hidden_size in hidden_sizes[1:]:
+            layers.append(nn.Dropout(dropout_rate))
+            layers.append(nn.Tanh()),
+            layers.append(nn.Linear(cross_size, hidden_size))
+            cross_size = hidden_size
+        self.features_extractor = nn.Sequential(*layers)
+        
+        self.classifier_head = nn.Sequential(
+            nn.Dropout(dropout_rate),
+            nn.Tanh(),
+            nn.Linear(cross_size, num_classes),  # Final classification layer
+        )
+        
+        self.to(self.device)
+        
+    def forward(self, batch):
+        questions = batch['question']
+        outputs = None
+        if 'image_features' in batch: # use precalculated features if available
+            outputs = self.forward_fusion(
+                [batch['image_features'],
+                batch['caption_features']]+batch['sub_images'])
+        else:
+            images = batch['image'].to(self.device)
+            sub_images = batch['sub_images'].to(self.device)
+        #print(f'types images: {type(images)}, sub_images: {type(sub_images)}')
+        #print(f'shapes images: {images.shape}, sub_images: {sub_images.shape}')
+        outputs = self.base_model.forward(images, [], questions, 0)
+        image_features = outputs['image_features']
+        caption_features = outputs['caption_features']
+        sub_images_features = self.base_model.image_forward(sub_images.view(-1, 3, 224, 224))['embedding']
+        sub_images_features = sub_images_features.view(-1, 4, self.base_model.embed_dim).transpose(0, 1)
+        question_type_features = self.base_model.text_forward([], batch['question_type'], 0)['embedding']
+        question_rest_features = self.base_model.text_forward([], batch['question_rest'], 0)['embedding']
+        #print(f'image_features: {image_features.shape} sub_images_features[0]: {sub_images_features[0].shape}')
+        return self.forward_fusion([image_features]+[f for f in sub_images_features], [caption_features, question_type_features, question_rest_features])
 
-
-
+    def forward_fusion(self, image_features, text_features):
+        image_features = self.image_in(image_features)
+        text_features = self.text_in(text_features)
+        fused_features = image_features * text_features
+        last_features = self.features_extractor(fused_features)
+        return self.classifier_head(last_features), last_features
+    
+    def unfreeze_base_model(self):
+        self.frozen_base_model = False
+        unfreeze_model(self.base_model)
+        
 class LinearFusionModelCategorical(nn.Module):
     def __init__(self, base_model: PCME, num_features:int, num_classes: int, hidden_sizes: list, input_type: InputType,
                  dropout_rate=0.0):
