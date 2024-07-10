@@ -55,7 +55,7 @@ train:
   log_step: 100
   grad_clip: 2
   val_epochs: 5
-  use_fp16: True
+  use_fp16: False
   output_file: model_noprob.log
 
 vqa_hidden_sizes: [2048]
