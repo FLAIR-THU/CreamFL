@@ -115,7 +115,7 @@ class VQAMetaData():
     
     def get_weights(self):
         total_count = sum(self.category_counts)
-        epsilon = 1000 # 1e-8  # Small value to prevent division by zero
+        epsilon = 1e-8  # Small value to prevent division by zero
         total_count = total_count + epsilon * self.get_category_size()
         return [total_count / (class_count + epsilon) for class_count in self.category_counts]
         
