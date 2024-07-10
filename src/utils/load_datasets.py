@@ -201,6 +201,7 @@ def vqa2_dataloader(dataset,
     transform = imagenet_transform(
         random_resize_crop=train,
         random_erasing_prob=cutout_prob,
+        handle_gray=True,
     )
     def collate_fn():
         def func(examples):
