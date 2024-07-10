@@ -294,7 +294,7 @@ class MMFL(object):
         
         score = 0
         
-        if self.vqa_engine is not None:
+        if self.vqa_engine is None:
             test_scores = self.engine.evaluate({'test': self._dataloaders['test']})
             self.engine.report_scores(step=round_n + 1,
                                     scores=test_scores,
@@ -331,7 +331,7 @@ class MMFL(object):
 
         self.engine.lr_scheduler.step()
         if self.vqa_engine is not None:
-            self.vqa_engine.lr_scheduler.step()
+            self.vqa_engine.vqa_lr_scheduler.step()
 
         del img_vec, txt_vec
         gc.collect()
