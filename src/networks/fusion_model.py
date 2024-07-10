@@ -79,25 +79,21 @@ class VQAFusionModel(nn.Module):
     def forward(self, batch):
         questions = batch['question']
         outputs = None
-        if 'image_features' in batch: # use precalculated features if available
-            outputs = self.forward_fusion(
-                [batch['image_features'],
-                batch['caption_features']]+batch['sub_images'])
-        else:
-            images = batch['image'].to(self.device)
-            sub_images = batch['sub_images'].to(self.device)
+        images = batch['image'].to(self.device)
+        #sub_images = batch['sub_images'].to(self.device)
         #print(f'types images: {type(images)}, sub_images: {type(sub_images)}')
         #print(f'shapes images: {images.shape}, sub_images: {sub_images.shape}')
         outputs = self.base_model.forward(images, [], questions, 0)
         image_features = outputs['image_features']
         caption_features = outputs['caption_features']
-        sub_images_features = self.base_model.image_forward(sub_images.view(-1, 3, 224, 224))['embedding']
-        sub_images_features = sub_images_features.view(-1, 4, self.base_model.embed_dim).transpose(0, 1)
-        question_type_features = self.base_model.text_forward([], batch['question_type'], 0)['embedding']
-        question_rest_features = self.base_model.text_forward([], batch['question_rest'], 0)['embedding']
+        #sub_images_features = self.base_model.image_forward(sub_images.view(-1, 3, 224, 224))['embedding']
+        #sub_images_features = sub_images_features.view(-1, 4, self.base_model.embed_dim).transpose(0, 1)
+        #question_type_features = self.base_model.text_forward([], batch['question_type'], 0)['embedding']
+        #question_rest_features = self.base_model.text_forward([], batch['question_rest'], 0)['embedding']
         #print(f'image_features: {image_features.shape} sub_images_features[0]: {sub_images_features[0].shape}')
-        return self.forward_fusion([image_features]+[f for f in sub_images_features], [caption_features, question_type_features, question_rest_features])
-
+        #return self.forward_fusion([image_features]+[f for f in sub_images_features], [caption_features, question_type_features, question_rest_features])
+        return self.forward_fusion([image_features], [caption_features])
+    
     def forward_fusion(self, image_features, text_features):
         image_features = self.image_in(torch.cat(image_features, dim=1))
         text_features = self.text_in(torch.cat(text_features, dim=1))
