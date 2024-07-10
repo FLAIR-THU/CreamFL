@@ -309,7 +309,7 @@ class MMFL(object):
         score = rsum
         
         if self.vqa_engine is not None:
-            test_scores = vqa_validation(10000, self.vqa_engine, self.vqa_meta, self.vqa_test_loader)
+            test_scores = vqa_validation(10000, self.vqa_engine.fusion_model, self.vqa_meta, self.vqa_test_loader)
             self.wandb.log(test_scores, step=self.cur_epoch)
             score = test_scores['accuracy']
 
