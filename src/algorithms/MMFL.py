@@ -38,7 +38,7 @@ is_test = False
 
 
 class MMFL(object):
-    def __init__(self, args, wandb=None):
+    def __init__(self, args, wandb):
         self.args = args
         self.wandb = wandb
 
