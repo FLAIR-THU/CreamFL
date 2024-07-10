@@ -53,8 +53,6 @@ class VQAFusionModel(nn.Module):
                  dropout_rate=0.0):
         super(VQAFusionModel, self).__init__()
         self.base_model = base_model
-        self.frozen_base_model = True
-        freeze_model(base_model)
         self.device = next(self.base_model.parameters()).device
         
         cross_size = hidden_sizes[0]
@@ -110,6 +108,10 @@ class VQAFusionModel(nn.Module):
     def unfreeze_base_model(self):
         self.frozen_base_model = False
         unfreeze_model(self.base_model)
+        
+    def freeze_base_model(self):
+        self.frozen_base_model = True
+        freeze_model(self.base_model)
         
 class LinearFusionModelCategorical(nn.Module):
     def __init__(self, base_model: PCME, num_features:int, num_classes: int, hidden_sizes: list, input_type: InputType,
@@ -183,3 +185,4 @@ class LinearFusionModelCategorical(nn.Module):
     def unfreeze_base_model(self):
         self.frozen_base_model = False
         unfreeze_model(self.base_model)
+        

@@ -81,8 +81,6 @@ class EngineBase(object):
         if self.logger is not None:
             self.logger.log('start train')
 
-        self.img_code, self.txt_code, self.mm_txt_code, self.mm_img_code = None, None, None, None
-
     def model_to_device(self):
         self.model.to(self.device)
         if self.criterion:
@@ -242,6 +240,7 @@ class TrainerEngine(EngineBase):
                 nn.utils.clip_grad.clip_grad_norm_(self.model.parameters(),
                                                    self.config.train.grad_clip)
             self.optimizer.step()
+                    
 
     def report_scores(self, step, scores, metadata, prefix=''):
         report_dict = {data_key: flatten_dict(_scores, sep='_')
