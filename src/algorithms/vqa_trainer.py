@@ -121,7 +121,7 @@ class VQAMetaData():
         
 
 class VQAEngine():
-    def __init__(self, base_trainer_engine, device='cuda'):
+    def __init__(self, base_trainer_engine:TrainerEngine, device='cuda'):
         self.device = device
         self.trainer_engine = base_trainer_engine
         self.fusion_model = None
@@ -144,7 +144,6 @@ class VQAEngine():
         self.vqa_lr_scheduler = get_lr_scheduler(config.lr_scheduler.name,
                                                self.vqa_optimizer,
                                                config.lr_scheduler)
-
         
     def train(self, tr_loader, pub_data_ratio=1.):
         self.trainer_engine.train(tr_loader, pub_data_ratio)

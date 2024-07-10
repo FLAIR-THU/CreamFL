@@ -53,7 +53,9 @@ class VQAFusionModel(nn.Module):
                  dropout_rate=0.0):
         super(VQAFusionModel, self).__init__()
         self.base_model = base_model
-        self.device = next(self.base_model.parameters()).device
+        self.device = base_model.device
+        
+        print(f'VQA Fusion Model device: {self.device}')
         
         cross_size = hidden_sizes[0]
         
