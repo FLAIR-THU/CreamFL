@@ -294,21 +294,21 @@ class MMFL(object):
         
         score = 0
         
-        if self.vqa_engine is None:
-            test_scores = self.engine.evaluate({'test': self._dataloaders['test']})
-            self.engine.report_scores(step=round_n + 1,
-                                    scores=test_scores,
-                                    metadata=metadata,
-                                    prefix=self.engine.eval_prefix)
-            rsum = test_scores['test']['n_fold']['i2t']['recall_1'] + test_scores['test']['n_fold']['t2i']['recall_1'] + \
-                test_scores['test']['i2t']['recall_1'] + test_scores['test']['t2i']['recall_1']
-            self.wandb.log({"Server rsum_r1": rsum}, step=self.cur_epoch)
-            self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=self.cur_epoch)
-            self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=self.cur_epoch)
-            self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=self.cur_epoch)
-            self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=self.cur_epoch)
-            score = rsum
-        else:
+        test_scores = self.engine.evaluate({'test': self._dataloaders['test']})
+        self.engine.report_scores(step=round_n + 1,
+                                scores=test_scores,
+                                metadata=metadata,
+                                prefix=self.engine.eval_prefix)
+        rsum = test_scores['test']['n_fold']['i2t']['recall_1'] + test_scores['test']['n_fold']['t2i']['recall_1'] + \
+            test_scores['test']['i2t']['recall_1'] + test_scores['test']['t2i']['recall_1']
+        self.wandb.log({"Server rsum_r1": rsum}, step=self.cur_epoch)
+        self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=self.cur_epoch)
+        self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=self.cur_epoch)
+        self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=self.cur_epoch)
+        self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=self.cur_epoch)
+        score = rsum
+        
+        if self.vqa_engine is not None:
             test_scores = vqa_validation(10000, self.vqa_engine, self.vqa_meta, self.vqa_test_loader)
             self.wandb.log(test_scores, step=self.cur_epoch)
             score = test_scores['accuracy']
