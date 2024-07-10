@@ -169,4 +169,4 @@ def prepare_args(description: str, script=None, is_vqa=False):
     args.save_dirs = helper.get_save_dirs(args.exp_dir, args.name)
     args.log_dir = args.save_dirs['logs']
     helper.set_seed(args.seed)
-    return args, None
+    return args, wandb

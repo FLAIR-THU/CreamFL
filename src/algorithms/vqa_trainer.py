@@ -173,7 +173,7 @@ class VQAEngine():
                 else:
                     loss.backward()
                     
-                if self.config.train.grad_clip > 0:
+                if epoch > 1 and self.config.train.grad_clip > 0:
                     torch.nn.utils.clip_grad.clip_grad_norm_(self.fusion_model.parameters(),
                                                    self.config.train.grad_clip)
                 
