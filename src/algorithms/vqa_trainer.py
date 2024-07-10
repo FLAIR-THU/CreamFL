@@ -136,19 +136,25 @@ class VQAEngine():
     def create(self, config, word2idx, evaluator, mlp_local, meta:VQAMetaData):
         self.vqa_meta = meta
         self.trainer_engine.create(config, word2idx, evaluator, mlp_local)
-        self.fusion_model = VQAFusionModel(self.trainer_engine.model,1,1, meta.get_category_size(), config.vqa_hidden_sizes, dropout_rate=config.vqa_dropout).to(self.trainer_engine.device)
-        self.vqa_criterion = torch.nn.CrossEntropyLoss(weight=self.weights_tensor(meta))     
+        self.fusion_model = VQAFusionModel(self.device,self.trainer_engine.model,1,1, meta.get_category_size(), config.vqa_hidden_sizes, dropout_rate=config.vqa_dropout).to(self.trainer_engine.device)
+        self.vqa_criterion = torch.nn.CrossEntropyLoss(weight=self.weights_tensor(meta)).to(self.device)
         self.vqa_optimizer = get_optimizer(config.optimizer.name,
                                          self.fusion_model.parameters(),
                                          config.optimizer)
         self.vqa_lr_scheduler = get_lr_scheduler(config.lr_scheduler.name,
                                                self.vqa_optimizer,
                                                config.lr_scheduler)
+    def to_half(self):
+        # Mixed precision
+        # https://nvidia.github.io/apex/amp.html
+        self.fusion_model, self.vqa_optimizer = amp.initialize(self.fusion_model, self.vqa_optimizer,
+                                                    opt_level='O2')
         
     def train(self, tr_loader, pub_data_ratio=1.):
         self.trainer_engine.train(tr_loader, pub_data_ratio)
         
     def train_vqa(self, epoch, vqa_loader, vqa2_test_dataloader = None):
+        self.fusion_model.train()
         n = 0
         loss_avg = 0
         with tqdm(enumerate(vqa_loader), total=len(vqa_loader)) as progress_bar:
@@ -179,8 +185,11 @@ class VQAEngine():
                     vqa_validation(100, self.fusion_model, vqa2_test_dataloader, 100)
                     vqa_validation(1000, self.fusion_model, vqa2_test_dataloader)
                     n += 1
-            
-def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000):
+                    self.fusion_model.train()
+
+@torch.no_grad()
+def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000):        
+    fusion_model.eval()
     right = 0
     unknown_right = 0
     unknown_outputs = 0

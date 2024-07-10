@@ -49,11 +49,11 @@ class LinearFusionModelEmbedded(nn.Module):
         return output
     
 class VQAFusionModel(nn.Module):
-    def __init__(self, base_model: PCME, img_features:int, txt_features:int, num_classes: int, hidden_sizes: list,
+    def __init__(self, device, base_model: PCME, img_features:int, txt_features:int, num_classes: int, hidden_sizes: list,
                  dropout_rate=0.0):
         super(VQAFusionModel, self).__init__()
         self.base_model = base_model
-        self.device = base_model.device
+        self.device = device
         
         print(f'VQA Fusion Model device: {self.device}')
         

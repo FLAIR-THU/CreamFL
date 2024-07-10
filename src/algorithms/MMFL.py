@@ -130,6 +130,8 @@ class MMFL(object):
         if self.config.train.get('use_fp16'):
             self.engine.logger.log('Train with half precision')
             self.engine.to_half()
+            if is_vqa:
+                self.vqa_engine.to_half()
 
     def create_model(self, args):
         self.logger.log('start creating model and partition datasets')
