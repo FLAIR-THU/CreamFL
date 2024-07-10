@@ -142,7 +142,7 @@ class VQAEngine():
                                          self.fusion_model.parameters(),
                                          config.optimizer)
         self.vqa_lr_scheduler = get_lr_scheduler(config.lr_scheduler.name,
-                                               self.optimizer,
+                                               self.vqa_optimizer,
                                                config.lr_scheduler)
 
         
@@ -154,25 +154,25 @@ class VQAEngine():
         loss_avg = 0
         with tqdm(enumerate(vqa_loader), total=len(vqa_loader)) as progress_bar:
             for i, batch in progress_bar:            
-                self.optimizer.zero_grad()
+                self.vqa_optimizer.zero_grad()
                 outputs, last_features = self.fusion_model.forward(batch)
                 answers = batch['multiple_choice_answer']
                 targets = torch.tensor([self.vqa_meta.get_category_id(answer) for answer in answers]).to(self.device)
                 loss = self.vqa_criterion(outputs, targets)
                 
                 if self.config.train.get('use_fp16'):
-                    with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                    with amp.scale_loss(loss, self.vqa_optimizer) as scaled_loss:
                         scaled_loss.backward()
                 else:
                     loss.backward()
                     
                 if self.config.train.grad_clip > 0:
-                    torch.nn.utils.clip_grad.clip_grad_norm_(self.model.parameters(),
+                    torch.nn.utils.clip_grad.clip_grad_norm_(self.fusion_model.parameters(),
                                                    self.config.train.grad_clip)
                 
                 loss_avg_rate = max(i, 99)
                 loss_avg = (loss_avg * loss_avg_rate + loss.item()) / (loss_avg_rate + 1)
-                self.optimizer.step()
+                self.vqa_optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l100: {loss_avg:.4f}")
                 
                 if vqa2_test_dataloader is not None and (i+1) % (128*2**n) == 0:
