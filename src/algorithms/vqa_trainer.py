@@ -207,7 +207,7 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
             output = outputs[k]
             if len(output) > max_cats:
                 output = output[:max_cats+1]
-            _, top_matches = torch.topk(output, 5, largest=True, sorted=True)
+            _, top_matches = torch.topk(output, min(5,max_cats+1), largest=True, sorted=True)
             top_match_names = [meta.get_category_by_id(cat_id.item()) for cat_id in top_matches]
             if top_match_names[0] == answer:
                 right += 1
