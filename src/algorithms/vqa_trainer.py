@@ -121,9 +121,9 @@ class VQAMetaData():
         
 
 class VQAEngine():
-    def __init__(self, device='cuda', partition_train_distill=-1.):
+    def __init__(self, base_trainer_engine, device='cuda'):
         self.device = device
-        self.trainer_engine = TrainerEngine(device=device, partition_train_distill=partition_train_distill)
+        self.trainer_engine = base_trainer_engine
         self.fusion_model = None
         self.vqa_optimizer = None
         self.vqa_criterion = None
@@ -218,3 +218,15 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
             break
     accuracy = right / total
     tqdm.write(f"test {max_cats} accuracy {right+unknown_right}/{total}={accuracy},  unknown_answers:{unknown_answers}, unknown_outputs:{unknown_outputs}, right after unknown:{unknown_right}, unknown_unknown:{unknown_unknown}")
+    
+    return {
+        "max_cats": max_cats,
+        "right0": right,
+        "right": right+unknown_right,
+        "total": total,
+        "accuracy": accuracy,
+        "unknown_answers": unknown_answers,
+        "unknown_outputs": unknown_outputs,
+        "right1": unknown_right,
+        "unknown_unknown": unknown_unknown
+    }

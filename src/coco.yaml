@@ -1,7 +1,7 @@
 dataloader:
-  batch_size: 32
-  eval_batch_size: 8
-  num_workers: 2
+  batch_size: 64
+  eval_batch_size: 64
+  num_workers: 8
   crop_size: 224
   word_dim: 300
   random_erasing_prob: 0.2
@@ -9,7 +9,7 @@ dataloader:
 
 model:
   name: pcme
-  embed_dim: 512  # 2048 origin
+  embed_dim: 2048  # 2048 origin
   cnn_type: resnet101  # res152 origin
   wemb_type: glove
   word_dim: 300
@@ -57,3 +57,6 @@ train:
   val_epochs: 5
   use_fp16: True
   output_file: model_noprob.log
+
+vqa_hidden_sizes: [2048]
+vqa_dropout: 0.2

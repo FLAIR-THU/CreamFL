@@ -8,6 +8,7 @@ import sys
 
 import torch
 import torch.nn as nn
+import datasets
 from tqdm import tqdm
 
 sys.path.append("./")
@@ -22,8 +23,9 @@ from src.utils.color_lib import RGBmean, RGBstdv
 
 from src.algorithms.eval_coco import COCOEvaluator
 from src.algorithms.retrieval_trainer import TrainerEngine
+from src.algorithms.vqa_trainer import VQAEngine, VQAMetaData, vqa_validation
 from src.utils.config import parse_config
-from src.utils.load_datasets import prepare_coco_dataloaders
+from src.utils.load_datasets import prepare_coco_dataloaders, vqa2_dataloader
 from src.utils.logger import PythonLogger
 
 try:
@@ -45,6 +47,7 @@ class MMFL(object):
         self.txt_local_trainers = None
         self.mm_local_trainers = None
         self.engine = None
+        self.vqa_engine = None
         self.best_score = 0
         self.cur_epoch = 0
 
@@ -53,8 +56,11 @@ class MMFL(object):
 
         # coco global dataloaders
         self.dataloaders_global = None
+        self.vqa_dataloader = None
+        self.vqa_meta = None
         # universal test dataloader
         self.test_loader = None
+        self.vqa_test_loader = None
 
         self.config = None
         self.set_config()
@@ -86,13 +92,16 @@ class MMFL(object):
             self.config.model.not_bert = False
             self.config.model.cnn_type = 'resnet101'
 
-    def load_dataset(self, args):
+    def load_dataset(self, args, is_vqa=False):
         dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
         vocab_path = './src/custom_datasets/vocabs/coco_vocab.pkl'
         self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, args.pub_data_num, args.max_size, vocab_path)
 
         self.engine = TrainerEngine()
         self.engine.set_logger(self.logger)
+        
+        if is_vqa:
+            self.vqa_engine = VQAEngine(self.engine)
 
         self.config.optimizer.learning_rate = self.args.server_lr
 
@@ -101,7 +110,17 @@ class MMFL(object):
                                        verbose=True,
                                        eval_device='cuda',
                                        n_crossfolds=5)
-        self.engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local)
+        if is_vqa:
+            vqa_dataset = datasets.load_dataset("HuggingFaceM4/VQAv2", split="train")
+            meta = VQAMetaData()
+            meta.build_or_load_categories_top()
+            self.vqa_meta = meta
+            self.vqa_dataloader = vqa2_dataloader(vqa_dataset, train=True)
+            test_dataset = datasets.load_dataset("HuggingFaceM4/VQAv2", split="validation")
+            self.vqa_test_loader = vqa2_dataloader(test_dataset)
+            self.vqa_engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local, meta)
+        else:
+            self.engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local)
 
         self.train_eval_dataloader = self._dataloaders.pop(
             'train_subset_eval' + f'_{self.args.pub_data_num}') if self._dataloaders is not None else None
@@ -190,6 +209,11 @@ class MMFL(object):
             self.logger.log(f"Round {round_n + 1}!")
             self.engine.train(
                 tr_loader=self._dataloaders['train_subset' + f'_{self.args.pub_data_num}'])  # global train
+            if self.vqa_engine is not None:
+                test_data = None
+                if round_n == 0:
+                    test_loader = self.vqa_test_loader # one test during inside the round
+                self.vqa_engine.train_vqa(round_n+1, self.vqa_dataloader, vqa2_test_dataloader=test_loader)
             if len(self.total_local_trainers) != 0:
                 self.cur_trainers = random.sample(self.total_local_trainers, self.args.client_num_per_round)
 
@@ -263,32 +287,47 @@ class MMFL(object):
         metadata = self.engine.metadata.copy()
         metadata['cur_epoch'] = round_n + 1
         metadata['lr'] = get_lr(self.engine.optimizer)
+        
+        score = 0
+        
+        if self.vqa_engine is not None:
+            test_scores = self.engine.evaluate({'test': self._dataloaders['test']})
+            self.engine.report_scores(step=round_n + 1,
+                                    scores=test_scores,
+                                    metadata=metadata,
+                                    prefix=self.engine.eval_prefix)
+            rsum = test_scores['test']['n_fold']['i2t']['recall_1'] + test_scores['test']['n_fold']['t2i']['recall_1'] + \
+                test_scores['test']['i2t']['recall_1'] + test_scores['test']['t2i']['recall_1']
+            self.wandb.log({"Server rsum_r1": rsum}, step=self.cur_epoch)
+            self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=self.cur_epoch)
+            self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=self.cur_epoch)
+            self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=self.cur_epoch)
+            self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=self.cur_epoch)
+            score = rsum
+        else:
+            test_scores = vqa_validation(10000, self.vqa_engine, self.vqa_meta, self.vqa_test_loader)
+            self.wandb.log(test_scores, step=self.cur_epoch)
+            score = test_scores['accuracy']
 
-        test_scores = self.engine.evaluate({'test': self._dataloaders['test']})
-        self.engine.report_scores(step=round_n + 1,
-                                  scores=test_scores,
-                                  metadata=metadata,
-                                  prefix=self.engine.eval_prefix)
-        rsum = test_scores['test']['n_fold']['i2t']['recall_1'] + test_scores['test']['n_fold']['t2i']['recall_1'] + \
-               test_scores['test']['i2t']['recall_1'] + test_scores['test']['t2i']['recall_1']
-        self.wandb.log({"Server rsum_r1": rsum}, step=self.cur_epoch)
-        self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=self.cur_epoch)
-        self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=self.cur_epoch)
-        self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=self.cur_epoch)
-        self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=self.cur_epoch)
-
-        if self.best_score < rsum:
-            best_score = rsum
+        def save_model(type_name):
+            if self.vqa_engine is None:
+                torch.save({'net': self.engine.model.state_dict()}, self.args.name + f'-{type_name}_model.pt')
+            else:
+                torch.save({'vqa': self.vqa_engine.fusion_model.state_dict()}, self.args.name + f'-{type_name}_model.pt')
+        
+        if self.best_score < score:
+            best_score = score
             metadata['best_score'] = best_score
             metadata['best_epoch'] = round_n + 1
             self.best_metadata, self.best_scores = metadata, test_scores
-
-            torch.save({'net': self.engine.model.state_dict()}, self.args.name + '-best_model.pt')
+            save_model("best")
 
         if round_n == self.args.comm_rounds - 1:
-            torch.save({'net': self.engine.model.state_dict()}, self.args.name + '-last_model.pt')
+            save_model("last")
 
         self.engine.lr_scheduler.step()
+        if self.vqa_engine is not None:
+            self.vqa_engine.lr_scheduler.step()
 
         del img_vec, txt_vec
         gc.collect()

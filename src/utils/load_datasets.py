@@ -193,6 +193,32 @@ def _get_coco_loader(image_root,
         print(f'Loading COCO Caption: n_images {coco_dataset.n_images} n_captions {len(coco_dataset)}...')
     return dataloader
 
+def vqa2_dataloader(dataset,
+                    num_workers=6,
+                    batch_size=64,
+                    cutout_prob=0.0,
+                    train=False,):
+    transform = imagenet_transform(
+        random_resize_crop=train,
+        random_erasing_prob=cutout_prob,
+    )
+    def collate_fn():
+        def func(examples):
+            batch = {}
+            batch['image'] = torch.stack([transform(example['image']) for example in examples])
+            batch['question'] = [example['question'] for example in examples]
+            batch['question_type'] = [example['question_type'] for example in examples]
+            batch['question_rest'] = [example['question'][len(example['question_type'])+1:] for example in examples]
+            batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
+            return batch
+        return func
+    return DataLoader(dataset,
+                      batch_size=batch_size,
+                      shuffle=train,
+                      num_workers=num_workers,
+                      collate_fn=collate_fn(),
+                      )
+    
 
 def load_vocab(vocab_path):
     if isinstance(vocab_path, str):
@@ -253,6 +279,7 @@ def imagenet_transform(resize_size=256,
                        crop_size=224,
                        random_resize_crop=False,
                        random_erasing_prob=0.0,
+                       handle_gray=False,
                        custom_transforms=None):
     """Standard ImageNet transform with resize/crop/normalize.
 
@@ -274,6 +301,10 @@ def imagenet_transform(resize_size=256,
     else:
         transform.append(transforms.Resize(resize_size))
         transform.append(transforms.CenterCrop(crop_size))
+    if handle_gray:
+        transform.append(transforms.Lambda(
+            lambda img: img.convert("RGB")),  # Convert grayscale to RGB
+        )
     transform.append(transforms.ToTensor())
     transform.append(imagenet_normalize())
 
