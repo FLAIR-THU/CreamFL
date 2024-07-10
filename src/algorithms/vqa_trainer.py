@@ -147,7 +147,7 @@ class VQAEngine():
     def to_half(self):
         # Mixed precision
         # https://nvidia.github.io/apex/amp.html
-        self.fusion_model, self.vqa_optimizer = amp.initialize(self.fusion_model, self.vqa_optimizer,
+        self.fusion_model, self.vqa_optimizer = amp.initialize(self.fusion_model, [self.vqa_optimizer, self.trainer_engine.optimizer],
                                                     opt_level='O2')
         
     def train(self, tr_loader, pub_data_ratio=1.):
