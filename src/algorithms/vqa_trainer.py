@@ -134,6 +134,7 @@ class VQAEngine():
         return torch.tensor(meta.get_weights()).to(self.device)
 
     def create(self, config, word2idx, evaluator, mlp_local, meta:VQAMetaData):
+        self.config = config
         self.vqa_meta = meta
         self.trainer_engine.create(config, word2idx, evaluator, mlp_local)
         self.fusion_model = VQAFusionModel(self.device,self.trainer_engine.model,1,1, meta.get_category_size(), config.vqa_hidden_sizes, dropout_rate=config.vqa_dropout).to(self.trainer_engine.device)
