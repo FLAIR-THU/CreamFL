@@ -58,5 +58,5 @@ train:
   use_fp16: False
   output_file: model_noprob.log
 
-vqa_hidden_sizes: [2048]
+vqa_hidden_sizes: [1024]
 vqa_dropout: 0.2
