@@ -9,12 +9,10 @@ class InputType(Enum):
     AxB = 'AxB'
 
 def freeze_model(m):
-    m.eval()
     for param in m.parameters():
         param.requires_grad = False
         
 def unfreeze_model(m):
-    m.train()
     for param in m.parameters():
         param.requires_grad = True
 
@@ -110,6 +108,14 @@ class VQAFusionModel(nn.Module):
     def freeze_base_model(self):
         self.frozen_base_model = True
         freeze_model(self.base_model)
+        
+    def unfreeze_base_image_model(self):
+        self.frozen_base_model = False
+        unfreeze_model(self.base_model.img_enc)
+        
+    def freeze_base_image_model(self):
+        self.frozen_base_model = True
+        freeze_model(self.base_model.img_enc)
         
 class LinearFusionModelCategorical(nn.Module):
     def __init__(self, base_model: PCME, num_features:int, num_classes: int, hidden_sizes: list, input_type: InputType,

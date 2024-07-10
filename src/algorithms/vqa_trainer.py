@@ -156,6 +156,7 @@ class VQAEngine():
         
     def train_vqa(self, epoch, vqa_loader, vqa2_test_dataloader = None):
         self.fusion_model.train()
+        self.fusion_model.freeze_base_image_model()
         n = 0
         loss_avg = 0
         with tqdm(enumerate(vqa_loader), total=len(vqa_loader)) as progress_bar:
@@ -182,11 +183,12 @@ class VQAEngine():
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l100: {loss_avg:.4f}")
                 
                 if vqa2_test_dataloader is not None and (i+1) % (128*2**n) == 0:
-                    vqa_validation(100, self.fusion_model, self.vqa_meta, vqa2_test_dataloader, 2)
-                    vqa_validation(100, self.fusion_model, self.vqa_meta, vqa2_test_dataloader, 100)
+                    vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader, 2)
+                    vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader, 500)
                     vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader)
                     n += 1
                     self.fusion_model.train()
+                    self.fusion_model.freeze_base_image_model()
 
 @torch.no_grad()
 def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000):        
@@ -225,7 +227,7 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
         total += len(answers)
         if total >= n:
             break
-    accuracy = right / total
+    accuracy = (right + unknown_right) / total
     tqdm.write(f"test {max_cats} accuracy {right+unknown_right}/{total}={accuracy},  unknown_answers:{unknown_answers}, unknown_outputs:{unknown_outputs}, right after unknown:{unknown_right}, unknown_unknown:{unknown_unknown}")
     
     return {
