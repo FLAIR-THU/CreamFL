@@ -82,21 +82,21 @@ def _get_cub_file_paths(dataset_name, dataset_root, caption_root):
             This split conntains 150 train classes / 50 unseen test classes (not in trainval)
     """
     if dataset_name == 'cub_trainval1':
-        train_classes = './datasets/annotations/cub/trainclasses1.txt'
-        val_classes = './datasets/annotations/cub/valclasses1.txt'
-        omit_ids = './datasets/annotations/cub/seen_test_images.txt'
+        train_classes = './custom_datasets/annotations/cub/trainclasses1.txt'
+        val_classes = './custom_datasets/annotations/cub/valclasses1.txt'
+        omit_ids = './custom_datasets/annotations/cub/seen_test_images.txt'
     elif dataset_name == 'cub_trainval2':
-        train_classes = './datasets/annotations/cub/trainclasses2.txt'
-        val_classes = './datasets/annotations/cub/valclasses2.txt'
-        omit_ids = './datasets/annotations/cub/seen_test_images.txt'
+        train_classes = './custom_datasets/annotations/cub/trainclasses2.txt'
+        val_classes = './custom_datasets/annotations/cub/valclasses2.txt'
+        omit_ids = './custom_datasets/annotations/cub/seen_test_images.txt'
     elif dataset_name == 'cub_trainval3':
-        train_classes = './datasets/annotations/cub/trainclasses3.txt'
-        val_classes = './datasets/annotations/cub/valclasses3.txt'
-        omit_ids = './datasets/annotations/cub/seen_test_images.txt'
+        train_classes = './custom_datasets/annotations/cub/trainclasses3.txt'
+        val_classes = './custom_datasets/annotations/cub/valclasses3.txt'
+        omit_ids = './custom_datasets/annotations/cub/seen_test_images.txt'
     elif dataset_name == 'cub':
-        train_classes = './datasets/annotations/cub/trainvalclasses.txt'
-        val_classes = './datasets/annotations/cub/testclasses.txt'
-        omit_ids = './datasets/annotations/cub/seen_test_images.txt'
+        train_classes = './custom_datasets/annotations/cub/trainvalclasses.txt'
+        val_classes = './custom_datasets/annotations/cub/testclasses.txt'
+        omit_ids = './custom_datasets/annotations/cub/seen_test_images.txt'
     else:
         raise ValueError(f'Invalide dataset_name: {dataset_name}')
 
@@ -237,10 +237,10 @@ def _get_coco_loader(image_root,
 def _get_coco_file_paths(dataset_root):
     """Select proper train / val classes and omit id files.
     """
-    train_ids = np.load('./datasets/annotations/coco_train_ids.npy')
-    train_extra_ids = np.load('./datasets/annotations/coco_restval_ids.npy')
-    val_ids = np.load('./datasets/annotations/coco_dev_ids.npy')[:5000]
-    te_ids = np.load('./datasets/annotations/coco_test_ids.npy')
+    train_ids = np.load('./custom_datasets/annotations/coco_train_ids.npy')
+    train_extra_ids = np.load('./custom_datasets/annotations/coco_restval_ids.npy')
+    val_ids = np.load('./custom_datasets/annotations/coco_dev_ids.npy')[:5000]
+    te_ids = np.load('./custom_datasets/annotations/coco_test_ids.npy')
 
     image_root = os.path.join(dataset_root, 'allimages')
     train_ann = os.path.join(dataset_root, 'annotations/captions_train2014.json')

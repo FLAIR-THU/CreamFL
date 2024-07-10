@@ -28,7 +28,7 @@ def get_pad_mask(max_length, lengths, set_pad_to_one=True):
 class EncoderText(nn.Module):
     def __init__(self, wemb_type='glove', word_dim=300, embed_dim=2048, num_class=4, scale=128, mlp_local=False):
         super(EncoderText, self).__init__()
-        with open('src/datasets/vocabs/coco_vocab.pkl',
+        with open('src/custom_datasets/vocabs/coco_vocab.pkl',
                   'rb') as fin:
             vocab = pickle.load(fin)
         word2idx = vocab['word2idx']

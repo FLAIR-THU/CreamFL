@@ -61,7 +61,7 @@ def parse_config(config_path, cache_dir=None, pretrained_resnet_model_path=None,
 
 class EngineBase(object):
     def __init__(self, args, config, logger, client=-1, dset_name="flicker30k", device='cuda',
-                 vocab_path='./datasets/vocabs/coco_vocab.pkl', mlp_local=False):
+                 vocab_path='./custom_datasets/vocabs/coco_vocab.pkl', mlp_local=False):
         self.dset_name = dset_name
 
         self.args = args
@@ -114,7 +114,7 @@ class EngineBase(object):
         self.local_epochs = args.local_epochs
         self.local_epoch = 0
 
-    def set_dset(self, dset_name, client=-1, vocab_path='./datasets/vocabs/coco_vocab.pkl'):
+    def set_dset(self, dset_name, client=-1, vocab_path='./custom_datasets/vocabs/coco_vocab.pkl'):
         if dset_name == "flicker30k":
             dataloaders, vocab = prepare_f30k_dataloaders(self.config.dataloader, '', self.args.max_size, vocab_path, client=client)
             self.train_loader = dataloaders['train']
