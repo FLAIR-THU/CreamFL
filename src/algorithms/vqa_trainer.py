@@ -182,9 +182,9 @@ class VQAEngine():
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l100: {loss_avg:.4f}")
                 
                 if vqa2_test_dataloader is not None and (i+1) % (128*2**n) == 0:
-                    vqa_validation(100, self.fusion_model, vqa2_test_dataloader, 2)
-                    vqa_validation(100, self.fusion_model, vqa2_test_dataloader, 100)
-                    vqa_validation(1000, self.fusion_model, vqa2_test_dataloader)
+                    vqa_validation(100, self.fusion_model, self.vqa_meta, vqa2_test_dataloader, 2)
+                    vqa_validation(100, self.fusion_model, self.vqa_meta, vqa2_test_dataloader, 100)
+                    vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader)
                     n += 1
                     self.fusion_model.train()
 
