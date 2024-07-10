@@ -111,11 +111,11 @@ class VQAFusionModel(nn.Module):
         
     def unfreeze_base_image_model(self):
         self.frozen_base_model = False
-        unfreeze_model(self.base_model.img_enc)
+        unfreeze_model(self.base_model.img_enc.cnn)
         
     def freeze_base_image_model(self):
         self.frozen_base_model = True
-        freeze_model(self.base_model.img_enc)
+        freeze_model(self.base_model.img_enc.cnn)
         
 class LinearFusionModelCategorical(nn.Module):
     def __init__(self, base_model: PCME, num_features:int, num_classes: int, hidden_sizes: list, input_type: InputType,
