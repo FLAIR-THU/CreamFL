@@ -213,11 +213,6 @@ class MMFL(object):
             self.logger.log(f"Round {round_n + 1}!")
             self.engine.train(
                 tr_loader=self._dataloaders['train_subset' + f'_{self.args.pub_data_num}'])  # global train
-            if self.vqa_engine is not None:
-                test_loader = None
-                if round_n == 0:
-                    test_loader = self.vqa_test_loader # one test during inside the round
-                self.vqa_engine.train_vqa(round_n+1, self.vqa_dataloader, vqa2_test_dataloader=test_loader)
             if len(self.total_local_trainers) != 0:
                 self.cur_trainers = random.sample(self.total_local_trainers, self.args.client_num_per_round)
 
@@ -309,6 +304,10 @@ class MMFL(object):
         score = rsum
         
         if self.vqa_engine is not None:
+            test_loader = None
+            if round_n == 0:
+                test_loader = self.vqa_test_loader # only test during training in the first round
+            self.vqa_engine.train_vqa(round_n+1, self.vqa_dataloader, vqa2_test_dataloader=test_loader)
             test_scores = vqa_validation(10000, self.vqa_engine.fusion_model, self.vqa_meta, self.vqa_test_loader)
             self.wandb.log(test_scores, step=self.cur_epoch)
             score = test_scores['accuracy']
