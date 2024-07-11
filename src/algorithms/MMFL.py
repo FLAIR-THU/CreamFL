@@ -214,7 +214,7 @@ class MMFL(object):
             self.engine.train(
                 tr_loader=self._dataloaders['train_subset' + f'_{self.args.pub_data_num}'])  # global train
             if self.vqa_engine is not None:
-                test_data = None
+                test_loader = None
                 if round_n == 0:
                     test_loader = self.vqa_test_loader # one test during inside the round
                 self.vqa_engine.train_vqa(round_n+1, self.vqa_dataloader, vqa2_test_dataloader=test_loader)
