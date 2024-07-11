@@ -17,8 +17,8 @@ if __name__ == "__main__":
     for round_n in range(args.comm_rounds):
         Algo.train(round_n)
 
-    Algo.logger.log("Best:")
-    Algo.engine.report_scores(step=args.comm_rounds,
-                              scores=Algo.best_scores,
-                              metadata=Algo.best_metadata,
-                              prefix=Algo.engine.eval_prefix)
+    #Algo.logger.log("Best:")
+    #Algo.engine.report_scores(step=args.comm_rounds,
+    #                          scores=Algo.best_scores,
+    #                          metadata=Algo.best_metadata,
+    #                          prefix=Algo.engine.eval_prefix)

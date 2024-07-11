@@ -18,8 +18,8 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
     parser.add_argument('--disable_wandb', action='store_true', default=False)
     parser.add_argument('--exp_dir', type=str, default='./experiments/',
                         help='Locations to save different experimental runs.')
-    parser.add_argument('--local_epochs', type=int, default=2) # original default = 5
-    parser.add_argument('--comm_rounds', type=int, default=2) # original default = 30
+    parser.add_argument('--local_epochs', type=int, default=5) # original default = 5
+    parser.add_argument('--comm_rounds', type=int, default=30) # original default = 30
 
     parser.add_argument('--model', type=str, default='resnet18', help='Target model name')
     parser.add_argument('--img_model_local', type=str, default='resnet10')
