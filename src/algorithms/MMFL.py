@@ -313,10 +313,10 @@ class MMFL(object):
             score = test_scores['accuracy']
 
         def save_model(type_name):
-            if self.vqa_engine is None:
-                torch.save({'net': self.engine.model.state_dict()}, self.args.name + f'-{type_name}_model.pt')
-            else:
-                torch.save({'vqa': self.vqa_engine.fusion_model.state_dict()}, self.args.name + f'-{type_name}_model.pt')
+            prefix = f'{self.args.name}_{type_name}_{self.args.feature_dim}'
+            torch.save({'net': self.engine.model.state_dict()},  f'{prefix}_net.pt')
+            if self.vqa_engine is not None:
+                torch.save({'vqa': self.vqa_engine.fusion_model.state_dict()}, f'{prefix}_vqa.pt')
         
         if self.best_score < score:
             best_score = score
