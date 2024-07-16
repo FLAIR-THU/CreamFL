@@ -6,7 +6,7 @@ if __name__ == "__main__":
 
     args, wandb = common.prepare_args(
         description="CreamFL Federated Learning for VQA task (local simulation)",
-        script="vqa.py",
+        script="vqa",
         is_vqa=True)
 
     Algo = MMFL(args, wandb)

@@ -113,9 +113,13 @@ class VQAMetaData():
             for answer in batch['multiple_choice_answer']:
                 self.get_category_id(answer, add_new=True)
     
-    def get_weights(self):
+    def get_weights(self, args):
+        if args.vqa_cat_weight == '1':
+            return [1] * self.get_category_size()
+        epsilon = 1e-8  # Small value to prevent division by zero
+        if args.vqa_cat_weight == 'count+1000':
+            epsilon = 1000
         total_count = sum(self.category_counts)
-        epsilon = 1000 # 1e-8  # Small value to prevent division by zero
         total_count = total_count + epsilon * self.get_category_size()
         return [total_count / (class_count + epsilon) for class_count in self.category_counts]
         
@@ -189,6 +193,8 @@ class VQAEngine():
                     n += 1
                     self.fusion_model.train()
                     self.fusion_model.freeze_base_model()
+        self.wandb.log({"train_vqa_loss_100": loss_avg})  
+        self.wandb.log({"train_vqa_lr": self.vqa_optimizer.get_lr()})
         self.fusion_model.unfreeze_base_model()
 
 @torch.no_grad()

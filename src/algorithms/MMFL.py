@@ -217,11 +217,14 @@ class MMFL(object):
                 self.cur_trainers = random.sample(self.total_local_trainers, self.args.client_num_per_round)
 
         # global representations
-        if self.args.agg_method == "con_w" or self.args.contrast_local_intra or self.args.contrast_local_inter:
+        if len(self.cur_trainers) == 0:
+            print("No clients to train, skipping global representations")
+        elif self.args.agg_method == "con_w" or self.args.contrast_local_intra or self.args.contrast_local_inter:
             img_feature, txt_feature = [], []
             distill_index = []
             for idx, (images, captions, captions_word, caption_lens, _, _, index) in tqdm(
                     enumerate(self.dataloaders_global['train_subset_eval' + f'_{self.args.pub_data_num}']),
+                    desc="Global Representations",
                     total=len(self.dataloaders_global['train_subset_eval' + f'_{self.args.pub_data_num}'])):
                 with torch.no_grad():
                     images = images.to(self.engine.device)  # [bs, 3, 224, 224]
@@ -245,6 +248,8 @@ class MMFL(object):
             self.distill_index = distill_index
             del img_feature, txt_feature
             gc.collect()
+        else:
+            print("No agg_method or contrast, skipping global representations")
 
         # local training and generated representations
         img_vec, img_num = [], []
@@ -297,6 +302,7 @@ class MMFL(object):
         rsum = test_scores['test']['n_fold']['i2t']['recall_1'] + test_scores['test']['n_fold']['t2i']['recall_1'] + \
             test_scores['test']['i2t']['recall_1'] + test_scores['test']['t2i']['recall_1']
         self.wandb.log({"Server rsum_r1": rsum}, step=self.cur_epoch)
+        self.wandb.log({"Server rsum": test_scores['test']['rsum']}, step=self.cur_epoch)
         self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=self.cur_epoch)
         self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=self.cur_epoch)
         self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=self.cur_epoch)
@@ -336,6 +342,10 @@ class MMFL(object):
         gc.collect()
 
     def distill(self, round_n, img_vec, txt_vec, img_num, txt_num, distill_index):
+        
+        if len(img_vec) == 0 and len(txt_vec) == 0:
+            print("No img_vec and txt_vec to distill (no clients)")
+            return
 
         self.engine.model.train()
 
