@@ -10,6 +10,7 @@ from tqdm import tqdm
 from algorithms.optimizers import get_optimizer, get_lr_scheduler
 from algorithms.retrieval_trainer import TrainerEngine
 from networks.fusion_model import VQAFusionModel
+from utils.util import print_model_tree
 
 try:
     from apex import amp
@@ -125,10 +126,11 @@ class VQAMetaData():
         
 
 class VQAEngine():
-    def __init__(self, args, base_trainer_engine:TrainerEngine, device='cuda'):
+    def __init__(self, args, base_trainer_engine:TrainerEngine, wandb, device='cuda'):
         self.args = args
         self.device = device
         self.trainer_engine = base_trainer_engine
+        self.wandb = wandb
         self.fusion_model = None
         self.vqa_optimizer = None
         self.vqa_criterion = None
@@ -165,6 +167,8 @@ class VQAEngine():
     def train_vqa(self, epoch, vqa_loader, vqa2_test_dataloader = None):
         self.fusion_model.train()
         self.fusion_model.freeze_base_model()
+        print_model_tree(self.fusion_model)
+
         n = 0
         loss_avg = 0
         with tqdm(enumerate(vqa_loader), total=len(vqa_loader)) as progress_bar:
@@ -200,6 +204,8 @@ class VQAEngine():
         self.wandb.log({"train_vqa_loss_100": loss_avg})  
         self.wandb.log({"train_vqa_lr": self.vqa_optimizer.get_lr()})
         self.fusion_model.unfreeze_base_model()
+        print_model_tree(self.fusion_model)
+
 
 @torch.no_grad()
 def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000):        

@@ -27,6 +27,7 @@ from src.algorithms.vqa_trainer import VQAEngine, VQAMetaData, vqa_validation
 from src.utils.config import parse_config
 from src.utils.load_datasets import prepare_coco_dataloaders, vqa2_dataloader
 from src.utils.logger import PythonLogger
+from src.utils.util import print_model_tree
 
 try:
     from apex import amp
@@ -101,7 +102,7 @@ class MMFL(object):
         self.engine.set_logger(self.logger)
         
         if is_vqa:
-            self.vqa_engine = VQAEngine(args,self.engine)
+            self.vqa_engine = VQAEngine(args,self.engine, self.wandb)
 
         self.config.optimizer.learning_rate = self.args.server_lr
 
@@ -119,8 +120,10 @@ class MMFL(object):
             test_dataset = datasets.load_dataset("HuggingFaceM4/VQAv2", split="validation")
             self.vqa_test_loader = vqa2_dataloader(test_dataset)
             self.vqa_engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local, meta)
+            print_model_tree(self.vqa_engine.fusion_model)
         else:
             self.engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local)
+            print_model_tree(self.engine.model)
 
         self.train_eval_dataloader = self._dataloaders.pop(
             'train_subset_eval' + f'_{self.args.pub_data_num}') if self._dataloaders is not None else None
