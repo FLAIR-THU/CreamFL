@@ -136,7 +136,10 @@ class VQAEngine():
         self.vqa_meta = None
         
     def weights_tensor(self, meta:VQAMetaData):
-        return torch.tensor(meta.get_weights(self.args)).to(self.device)
+        weights = meta.get_weights(self.args)
+        if weights is None:
+            return None
+        return torch.tensor(weights).to(self.device)
 
     def create(self, config, word2idx, evaluator, mlp_local, meta:VQAMetaData):
         self.config = config
