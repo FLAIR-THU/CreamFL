@@ -125,7 +125,8 @@ class VQAMetaData():
         
 
 class VQAEngine():
-    def __init__(self, base_trainer_engine:TrainerEngine, device='cuda'):
+    def __init__(self, args, base_trainer_engine:TrainerEngine, device='cuda'):
+        self.args = args
         self.device = device
         self.trainer_engine = base_trainer_engine
         self.fusion_model = None
@@ -135,7 +136,7 @@ class VQAEngine():
         self.vqa_meta = None
         
     def weights_tensor(self, meta:VQAMetaData):
-        return torch.tensor(meta.get_weights()).to(self.device)
+        return torch.tensor(meta.get_weights(self.args)).to(self.device)
 
     def create(self, config, word2idx, evaluator, mlp_local, meta:VQAMetaData):
         self.config = config

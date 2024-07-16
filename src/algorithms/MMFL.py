@@ -101,7 +101,7 @@ class MMFL(object):
         self.engine.set_logger(self.logger)
         
         if is_vqa:
-            self.vqa_engine = VQAEngine(self.engine)
+            self.vqa_engine = VQAEngine(args,self.engine)
 
         self.config.optimizer.learning_rate = self.args.server_lr
 
