@@ -202,7 +202,7 @@ class VQAEngine():
                     self.fusion_model.train()
                     self.fusion_model.freeze_base_model()
         self.wandb.log({"train_vqa_loss_100": loss_avg})  
-        self.wandb.log({"train_vqa_lr": self.vqa_optimizer.get_lr()})
+        self.wandb.log({"train_vqa_lr": self.vqa_optimizer.param_groups[0].get_lr()})
         self.fusion_model.unfreeze_base_model()
         print_model_tree(self.fusion_model)
 
