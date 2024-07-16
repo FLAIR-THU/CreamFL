@@ -115,7 +115,7 @@ class VQAMetaData():
     
     def get_weights(self, args):
         if args.vqa_cat_weight == '1':
-            return [1] * self.get_category_size()
+            return None # use default uniform weights for CrossEntropyLoss
         epsilon = 1e-8  # Small value to prevent division by zero
         if args.vqa_cat_weight == 'count+1000':
             epsilon = 1000
