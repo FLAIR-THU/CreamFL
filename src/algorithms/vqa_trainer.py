@@ -156,7 +156,7 @@ class VQAEngine():
         
     def train_vqa(self, epoch, vqa_loader, vqa2_test_dataloader = None):
         self.fusion_model.train()
-        self.fusion_model.freeze_base_image_model()
+        self.fusion_model.freeze_base_model()
         n = 0
         loss_avg = 0
         with tqdm(enumerate(vqa_loader), total=len(vqa_loader)) as progress_bar:
@@ -188,7 +188,8 @@ class VQAEngine():
                     vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader)
                     n += 1
                     self.fusion_model.train()
-                    self.fusion_model.freeze_base_image_model()
+                    self.fusion_model.freeze_base_model()
+        self.fusion_model.unfreeze_base_model()
 
 @torch.no_grad()
 def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000):        
