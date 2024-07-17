@@ -166,8 +166,9 @@ class VQAEngine():
         
     def train_vqa(self, epoch, vqa_loader, vqa2_test_dataloader = None):
         self.fusion_model.train()
-        self.fusion_model.freeze_base_model()
-        print_model_tree(self.fusion_model)
+        if epoch < 6:
+            self.fusion_model.freeze_base_model()
+        # print_model_tree(self.fusion_model)
 
         n = 0
         loss_avg = 0
@@ -185,7 +186,7 @@ class VQAEngine():
                 else:
                     loss.backward()
                     
-                if epoch > 15 and self.config.train.grad_clip > 0:
+                if self.config.train.grad_clip > 0:
                     torch.nn.utils.clip_grad.clip_grad_norm_(self.fusion_model.parameters(),
                                                    self.config.train.grad_clip)
                 
@@ -200,11 +201,12 @@ class VQAEngine():
                     vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader)
                     n += 1
                     self.fusion_model.train()
-                    self.fusion_model.freeze_base_model()
-        self.wandb.log({"train_vqa_loss_100": loss_avg})  
+                    if epoch < 6:
+                        self.fusion_model.freeze_base_model()
+        self.wandb.log({"train_vqa_loss_100": loss_avg}, step=epoch)  
         #self.wandb.log({"train_vqa_lr": self.vqa_optimizer.param_groups[0].get_lr()})
         self.fusion_model.unfreeze_base_model()
-        print_model_tree(self.fusion_model)
+        #print_model_tree(self.fusion_model)
 
 
 @torch.no_grad()

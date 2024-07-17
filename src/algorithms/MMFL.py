@@ -316,7 +316,7 @@ class MMFL(object):
             test_loader = None
             if round_n == 0:
                 test_loader = self.vqa_test_loader # only test during training in the first round
-            self.vqa_engine.train_vqa(round_n+1, self.vqa_dataloader, vqa2_test_dataloader=test_loader)
+            self.vqa_engine.train_vqa(self.cur_epoch, self.vqa_dataloader, vqa2_test_dataloader=test_loader)
             test_scores = vqa_validation(10000, self.vqa_engine.fusion_model, self.vqa_meta, self.vqa_test_loader)
             self.wandb.log(test_scores, step=self.cur_epoch)
             score = test_scores['accuracy']
