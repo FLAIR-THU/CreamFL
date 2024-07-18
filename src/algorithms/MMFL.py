@@ -100,7 +100,7 @@ class MMFL(object):
         self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, args.pub_data_num, args.max_size, vocab_path)
 
         self.engine = TrainerEngine()
-        if args.pretrained_model.endswith('_net.pth'):
+        if args.pretrained_model.endswith('_net.pt'):
             print(f"Loading pretrained model as TrainerEngine {args.pretrained_model}")
             checkpoint = torch.load(args.pretrained_model)
             self.engine.model.load_state_dict(checkpoint['net'])
@@ -108,7 +108,7 @@ class MMFL(object):
         
         if is_vqa:
             self.vqa_engine = VQAEngine(args,self.engine, self.wandb)
-            if args.pretrained_model.endswith('_vqa.pth'):
+            if args.pretrained_model.endswith('_vqa.pt'):
                 print(f"Loading pretrained model as VQAEngine {args.pretrained_model}")
                 checkpoint = torch.load(args.pretrained_model)
                 self.vqa_engine.fusion_model.load_state_dict(checkpoint['vqa'])
