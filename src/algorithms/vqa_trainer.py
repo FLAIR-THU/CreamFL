@@ -166,9 +166,12 @@ class VQAEngine():
         
     def train_vqa(self, epoch, vqa_loader, vqa2_test_dataloader = None):
         self.fusion_model.train()
-        full_training_epoch = 10
+        full_training_epoch = self.args.vqa_full_training_epoch
         if epoch < full_training_epoch:
+            print("Freezing base model")
             self.fusion_model.freeze_base_model()
+        else:
+            print("Not freezing base model")
         # print_model_tree(self.fusion_model)
 
         n = 0

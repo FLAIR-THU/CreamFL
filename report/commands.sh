@@ -30,5 +30,7 @@ git pull && python src/main.py --name base_intra_full_clients --server_lr 1e-5 -
 git pull && python src/main.py --name base_0_clients --server_lr 1e-5 --seed 0 --feature_dim 1024  --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
 git pull && python src/main.py --name base_0c200k --server_lr 1e-5 --seed 0 --feature_dim 1024 --pub_data_num 200000  --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
 
+git pull && python src/vqa.py --name vqa_0c1_pre400k --server_lr 1e-5 --pretrained_model vqa_0c1_pre400k_best_1024_vqa.pt --seed 0 --feature_dim 1024 --pub_data_num 1 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
 
-git pull && python src/vqa.py --name vqa_0c1_pre400k --server_lr 1e-5 --seed 0 --feature_dim 1024 --pub_data_num 1 --pretrained_model --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
+
+git pull && python src/vqa.py --name fd1k_fte0_nort_0c --server_lr 1e-5 --seed 0 --feature_dim 1024 --pub_data_num 1 --vqa_full_training_epoch 0 --no_retrieval_training --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0

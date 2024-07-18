@@ -91,6 +91,9 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
     parser.add_argument('--fed_config', default='fed_config.yaml', help="federation network configuration file")
     parser.add_argument('--client_name', help="client name, only used by clients")
     
+    parser.add_argument('--no_retrieval_training', action='store_true', default=False,)
+
+    
     if is_vqa: # vqa only options
         parser.add_argument('--vqa_fusion_network', default='linear')
         parser.add_argument('--vqa_pretrained_base_model', default='./sl2-best_model.pt')
@@ -105,6 +108,7 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
         parser.add_argument('--vqa_dropout', type=float, default=0.0, help='Dropout rate for the fusion network.')
         parser.add_argument('--vqa_input_type', type=str, default='A_B', choices=['A_B', 'AxB'],)
         parser.add_argument('--vqa_cat_weight', type=str, default='1', choices=['1', 'count', 'count+1000'],)
+        parser.add_argument('--vqa_full_training_epoch' , type=int, default=0, help='Number of epochs start training the model end to end.')
 
 
 def init_wandb(args, script=None):

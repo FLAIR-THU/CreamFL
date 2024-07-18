@@ -126,12 +126,16 @@ class MMFL(object):
                 print(f"Loading pretrained model as VQAEngine {args.pretrained_model}")
                 checkpoint = torch.load(args.pretrained_model)
                 self.vqa_engine.fusion_model.load_state_dict(checkpoint['vqa'])
+                self.best_score = getattr(checkpoint, 'score', self.best_score)
         else:
             self.engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local)
         if args.pretrained_model.endswith('_net.pt'):
             print(f"Loading pretrained model as TrainerEngine {args.pretrained_model}")
             checkpoint = torch.load(args.pretrained_model)
             self.engine.model.load_state_dict(checkpoint['net'])
+            if not is_vqa:
+                self.best_score = getattr(checkpoint, 'score', self.best_score)
+
         #print_model_tree(self.engine.model)
 
         self.train_eval_dataloader = self._dataloaders.pop(
@@ -219,14 +223,15 @@ class MMFL(object):
         self.cur_epoch = round_n
 
         self.cur_trainers = self.total_local_trainers
+        
+        self.logger.log(f"Round {round_n + 1}!")
 
-        if not is_test:
+        if not is_test and self.args.no_retrieval_training:
             # global training
-            self.logger.log(f"Round {round_n + 1}!")
             self.engine.train(
                 tr_loader=self._dataloaders['train_subset' + f'_{self.args.pub_data_num}'])  # global train
-            if len(self.total_local_trainers) != 0:
-                self.cur_trainers = random.sample(self.total_local_trainers, self.args.client_num_per_round)
+        if len(self.total_local_trainers) != 0:
+            self.cur_trainers = random.sample(self.total_local_trainers, self.args.client_num_per_round)
 
         # global representations
         if len(self.cur_trainers) == 0:
@@ -330,11 +335,13 @@ class MMFL(object):
             self.wandb.log(test_scores, step=self.cur_epoch)
             score = test_scores['accuracy']
 
-        def save_model(type_name):
+        def save_model(type_name, score=score):
             prefix = f'{self.args.name}_{type_name}_{self.args.feature_dim}'
-            torch.save({'net': self.engine.model.state_dict()},  f'{prefix}_net.pt')
+            torch.save({'net': self.engine.model.state_dict(),
+                        'score':score},  f'{prefix}_net.pt')
             if self.vqa_engine is not None:
-                torch.save({'vqa': self.vqa_engine.fusion_model.state_dict()}, f'{prefix}_vqa.pt')
+                torch.save({'vqa': self.vqa_engine.fusion_model.state_dict(),
+                            'score':score}, f'{prefix}_vqa.pt')
         
         if self.best_score < score:
             best_score = score
