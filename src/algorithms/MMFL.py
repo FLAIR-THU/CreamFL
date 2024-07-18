@@ -226,7 +226,7 @@ class MMFL(object):
         
         self.logger.log(f"Round {round_n + 1}!")
 
-        if not is_test and self.args.no_retrieval_training:
+        if not is_test and not self.args.no_retrieval_training:
             # global training
             self.engine.train(
                 tr_loader=self._dataloaders['train_subset' + f'_{self.args.pub_data_num}'])  # global train
