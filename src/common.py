@@ -23,7 +23,8 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
 
     #parser.add_argument('--model', type=str, default='resnet18', help='Target model name')
     #parser.add_argument('--img_model_local', type=str, default='resnet10')
-    parser.add_argument('--pretrained', type=int, default=0)
+    #parser.add_argument('--pretrained', type=int, default=0)
+    parser.add_argument('--pretrained_model', type=str, default="")
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=1, metavar='S',

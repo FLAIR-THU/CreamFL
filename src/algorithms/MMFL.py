@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import datasets
 from tqdm import tqdm
+import wandb
 
 sys.path.append("./")
 sys.path.append("../")
@@ -39,7 +40,7 @@ is_test = False
 
 
 class MMFL(object):
-    def __init__(self, args, wandb):
+    def __init__(self, args, wandb:wandb):
         self.args = args
         self.wandb = wandb
 
@@ -99,10 +100,19 @@ class MMFL(object):
         self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, args.pub_data_num, args.max_size, vocab_path)
 
         self.engine = TrainerEngine()
+        if args.pretrained_model.endswith('_net.pth'):
+            print(f"Loading pretrained model as TrainerEngine {args.pretrained_model}")
+            checkpoint = torch.load(args.pretrained_model)
+            self.engine.model.load_state_dict(checkpoint['net'])
         self.engine.set_logger(self.logger)
         
         if is_vqa:
             self.vqa_engine = VQAEngine(args,self.engine, self.wandb)
+            if args.pretrained_model.endswith('_vqa.pth'):
+                print(f"Loading pretrained model as VQAEngine {args.pretrained_model}")
+                checkpoint = torch.load(args.pretrained_model)
+                self.vqa_engine.fusion_model.load_state_dict(checkpoint['vqa'])
+            
 
         self.config.optimizer.learning_rate = self.args.server_lr
 
