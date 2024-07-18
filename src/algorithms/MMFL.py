@@ -100,19 +100,10 @@ class MMFL(object):
         self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, args.pub_data_num, args.max_size, vocab_path)
 
         self.engine = TrainerEngine()
-        if args.pretrained_model.endswith('_net.pt'):
-            print(f"Loading pretrained model as TrainerEngine {args.pretrained_model}")
-            checkpoint = torch.load(args.pretrained_model)
-            self.engine.model.load_state_dict(checkpoint['net'])
         self.engine.set_logger(self.logger)
         
         if is_vqa:
             self.vqa_engine = VQAEngine(args,self.engine, self.wandb)
-            if args.pretrained_model.endswith('_vqa.pt'):
-                print(f"Loading pretrained model as VQAEngine {args.pretrained_model}")
-                checkpoint = torch.load(args.pretrained_model)
-                self.vqa_engine.fusion_model.load_state_dict(checkpoint['vqa'])
-            
 
         self.config.optimizer.learning_rate = self.args.server_lr
 
@@ -130,10 +121,18 @@ class MMFL(object):
             test_dataset = datasets.load_dataset("HuggingFaceM4/VQAv2", split="validation")
             self.vqa_test_loader = vqa2_dataloader(test_dataset)
             self.vqa_engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local, meta)
-            print_model_tree(self.vqa_engine.fusion_model)
+            #print_model_tree(self.vqa_engine.fusion_model)
+            if args.pretrained_model.endswith('_vqa.pt'):
+                print(f"Loading pretrained model as VQAEngine {args.pretrained_model}")
+                checkpoint = torch.load(args.pretrained_model)
+                self.vqa_engine.fusion_model.load_state_dict(checkpoint['vqa'])
         else:
             self.engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local)
-            print_model_tree(self.engine.model)
+        if args.pretrained_model.endswith('_net.pt'):
+            print(f"Loading pretrained model as TrainerEngine {args.pretrained_model}")
+            checkpoint = torch.load(args.pretrained_model)
+            self.engine.model.load_state_dict(checkpoint['net'])
+        #print_model_tree(self.engine.model)
 
         self.train_eval_dataloader = self._dataloaders.pop(
             'train_subset_eval' + f'_{self.args.pub_data_num}') if self._dataloaders is not None else None
