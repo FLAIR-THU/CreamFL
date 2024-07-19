@@ -106,7 +106,7 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
         parser.add_argument('--vqa_lr',  type=float, default=0.0002, help='Learning rate for the fusion network.')
         parser.add_argument('--vqa_weight_decay', type=float, default=0.0, help='Weight decay for the fusion network.')
         parser.add_argument('--vqa_dropout', type=float, default=0.0, help='Dropout rate for the fusion network.')
-        parser.add_argument('--vqa_input_type', type=str, default='A_B', choices=['A_B', 'AxB'],)
+        parser.add_argument('--vqa_input_type', type=str, default='AxB', choices=['A_B', 'AxB'],)
         parser.add_argument('--vqa_cat_weight', type=str, default='1', choices=['1', 'count', 'count+1000'],)
         parser.add_argument('--vqa_full_training_epoch' , type=int, default=0, help='Number of epochs start training the model end to end.')
 

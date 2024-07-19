@@ -22,13 +22,13 @@ def prepare_coco_dataloaders(dataloader_config,
                              subset_num, # was hard coded to 50000
                              client_subset_num, # was hard coded to 10000
                              vocab_path='./vocabs/coco_vocab.pkl',
-                             num_workers=6, tsne=False, client=-1):
+                             num_workers=12, tsne=False, client=-1):
     """Prepare MS-COCO Caption train / val / test dataloaders
     Args:
         dataloader_config (dict): configuration file which should contain "batch_size"
         dataset_root (str): root of your MS-COCO dataset (see README.md for detailed dataset hierarchy)
         vocab_path (str, optional): path for vocab pickle file (default: ./vocabs/coco_vocab.pkl).
-        num_workers (int, optional): num_workers for the dataloaders (default: 6)
+        num_workers (int, optional): num_workers for the dataloaders (default: 12)
     Returns:
         dataloaders (dict): keys = ["train", "val", "te"], values are the corresponding dataloaders.
         vocab (Vocabulary object): vocab object
@@ -194,7 +194,7 @@ def _get_coco_loader(image_root,
     return dataloader
 
 def vqa2_dataloader(dataset,
-                    num_workers=6,
+                    num_workers=12,
                     batch_size=64,
                     cutout_prob=0.0,
                     train=False,):

@@ -154,7 +154,7 @@ def prepare_cub_dataloaders(dataloader_config,
                             dataset_root,
                             caption_root,
                             vocab_path='./vocabs/cub_vocab.pkl',
-                            num_workers=6):
+                            num_workers=12):
     """Prepare CUB Caption train / val / test dataloaders
     CUB Caption loader has a fixed batch size
     - train loader: # classes (trainval = 100, full = 150)
@@ -171,7 +171,7 @@ def prepare_cub_dataloaders(dataloader_config,
         dataset_root (str): root of your CUB images (see README.md for detailed dataset hierarchy)
         caption_root (str): root of your CUB captions (see README.md for detailed dataset hierarchy)
         vocab_path (str, optional): path for vocab pickle file (default: ./vocabs/cub_vocab.pkl).
-        num_workers (int, optional): num_workers for the dataloaders (default: 6)
+        num_workers (int, optional): num_workers for the dataloaders (default: 12)
     Returns:
         dataloaders (dict): keys = ["train", "val", "val_in"], values are the corresponding dataloaders.
         vocab (Vocabulary object): vocab object
@@ -264,13 +264,13 @@ def _get_coco_file_paths(dataset_root):
 def prepare_coco_dataloaders(dataloader_config,
                              dataset_root,
                              vocab_path='./vocabs/coco_vocab.pkl',
-                             num_workers=6):
+                             num_workers=12):
     """Prepare MS-COCO Caption train / val / test dataloaders
     Args:
         dataloader_config (dict): configuration file which should contain "batch_size"
         dataset_root (str): root of your MS-COCO dataset (see README.md for detailed dataset hierarchy)
         vocab_path (str, optional): path for vocab pickle file (default: ./vocabs/coco_vocab.pkl).
-        num_workers (int, optional): num_workers for the dataloaders (default: 6)
+        num_workers (int, optional): num_workers for the dataloaders (default: 12)
     Returns:
         dataloaders (dict): keys = ["train", "val", "te"], values are the corresponding dataloaders.
         vocab (Vocabulary object): vocab object
@@ -384,13 +384,13 @@ def prepare_f30k_dataloaders(dataloader_config,
                              max_size,
                              vocab_path='./vocabs/coco_vocab.pkl',
                              client=-1,
-                             num_workers=6):
+                             num_workers=12):
     """Prepare MS-COCO Caption train / val / test dataloaders
     Args:
         dataloader_config (dict): configuration file which should contain "batch_size"
         dataset_root (str): root of your MS-COCO dataset (see README.md for detailed dataset hierarchy)
         vocab_path (str, optional): path for vocab pickle file (default: ./vocabs/coco_vocab.pkl).
-        num_workers (int, optional): num_workers for the dataloaders (default: 6)
+        num_workers (int, optional): num_workers for the dataloaders (default: 12)
     Returns:
         dataloaders (dict): keys = ["train", "val", "te"], values are the corresponding dataloaders.
         vocab (Vocabulary object): vocab object

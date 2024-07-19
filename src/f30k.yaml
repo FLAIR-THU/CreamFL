@@ -1,7 +1,7 @@
 dataloader:
   batch_size: 32
   eval_batch_size: 8
-  num_workers: 2
+  num_workers: 8
   crop_size: 224
   word_dim: 300
   random_erasing_prob: 0.2
