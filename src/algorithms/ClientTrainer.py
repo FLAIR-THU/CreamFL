@@ -320,7 +320,7 @@ class ClientTrainer:
         # Set model to training mode
         self.model.train()
 
-        for i, data in enumerate(self.train_loader):
+        for i, data in tqdm(enumerate(self.train_loader), total=len(self.train_loader)):
             self.optimizer.zero_grad()
             with torch.set_grad_enabled(True):
                 center_labels_var = torch.autograd.Variable(self.class_label.to(torch.long)).to(self.gpuid)
