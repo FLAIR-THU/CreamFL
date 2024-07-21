@@ -97,6 +97,11 @@ class MMClientTrainer(EngineBase):
             self.model, self.optimizer = amp.initialize(self.model, self.optimizer,
                                                         opt_level='O2')
         self.model.train()
+        
+        if self.local_epoch == 0:
+            for i in range(self.client_init_local_epochs):
+                self.local_epoch += 1
+                self.train_epoch(global_img_feature, global_txt_feature, distill_index, global_train_loader, prefix='')
 
         for i in range(self.local_epochs):
             self.local_epoch += 1
