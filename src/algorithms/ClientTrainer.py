@@ -200,7 +200,7 @@ class ClientTrainer:
         self.lr_scheduler(self.cur_epoch)
         
         if self.local_epoch == 0:
-            for i in range(self.client_init_local_epochs):
+            for i in range(self.args.client_init_local_epochs):
                 self.local_epoch += 1
                 self.tra(global_img_feature, global_txt_feature, distill_index, global_train_loader)
 

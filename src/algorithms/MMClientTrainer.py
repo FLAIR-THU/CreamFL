@@ -99,7 +99,7 @@ class MMClientTrainer(EngineBase):
         self.model.train()
         
         if self.local_epoch == 0:
-            for i in range(self.client_init_local_epochs):
+            for i in range(self.args.client_init_local_epochs):
                 self.local_epoch += 1
                 self.train_epoch(global_img_feature, global_txt_feature, distill_index, global_train_loader, prefix='')
 
