@@ -24,7 +24,7 @@ git pull && python src/vqa_exp.py --seed 0 --vqa_hidden_sizes 1024 --vqa_unfreez
 #}}
 
 #test
-git pull && python src/vqa.py --name test --server_lr 1e-5 --seed 0 --feature_dim 3 --pub_data_num 100 --client_num_per_round 1 --num_img_clients 1 --num_txt_clients 1 --num_mm_clients 1 --local_epochs 2 --comm_rounds 2
+git pull && python src/vqa.py --name test --server_lr 1e-5 --feature_dim 4 --pub_data_num 100 --client_num_per_round 0 --num_img_clients 1 --num_txt_clients 1 --num_mm_clients 1 --local_epochs 2 --comm_rounds 2
 
 
 git pull && python src/vqa.py --name vqa_0c_100k --server_lr 1e-5 --seed 0 --feature_dim 1024 --pub_data_num 100000 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0

@@ -182,7 +182,7 @@ class VQAEngine():
             
         n = 0
         loss_avg = 0
-        with tqdm(enumerate(vqa_loader), total=len(vqa_loader)) as progress_bar:
+        with tqdm(enumerate(vqa_loader), total=max_batches) as progress_bar:
             for i, batch in progress_bar:     
                 if i >= max_batches:
                     break
