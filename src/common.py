@@ -108,7 +108,8 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
         parser.add_argument('--vqa_dropout', type=float, default=0.0, help='Dropout rate for the fusion network.')
         parser.add_argument('--vqa_input_type', type=str, default='AxB', choices=['A_B', 'AxB'],)
         parser.add_argument('--vqa_cat_weight', type=str, default='1', choices=['1', 'count', 'count+1000'],)
-        parser.add_argument('--vqa_full_training_epoch' , type=int, default=0, help='Number of epochs start training the model end to end.')
+        parser.add_argument('--vqa_full_training_epoch' , type=int, default=0, help='Number of epochs start training the model end to end.')        
+        parser.add_argument('--vqa_data_size_per_epoch' , type=int, default=0, help='Number of data samples to use per epoch for global model training (default: 0 (same as pub_data_num), -1 (use all data)')
 
 
 def init_wandb(args, script=None):

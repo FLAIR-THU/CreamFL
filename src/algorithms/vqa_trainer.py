@@ -173,11 +173,20 @@ class VQAEngine():
         else:
             print("Not freezing base model")
         # print_model_tree(self.fusion_model)
-
+        
+        max_batches = len(vqa_loader)
+        if self.args.vqa_data_size_per_epoch == 0:
+            max_batches = self.args.pub_data_num / vqa_loader.batch_size
+        elif self.args.vqa_data_size_per_epoch > 0:
+            max_batches = self.args.vqa_data_size_per_epoch / vqa_loader.batch_size
+            
         n = 0
         loss_avg = 0
         with tqdm(enumerate(vqa_loader), total=len(vqa_loader)) as progress_bar:
-            for i, batch in progress_bar:            
+            for i, batch in progress_bar:     
+                if i >= max_batches:
+                    break
+                       
                 self.vqa_optimizer.zero_grad()
                 outputs, last_features = self.fusion_model.forward(batch)
                 answers = batch['multiple_choice_answer']

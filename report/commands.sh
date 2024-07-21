@@ -23,6 +23,9 @@ git pull && python src/vqa_exp.py --seed 0 --vqa_hidden_sizes 1024 --vqa_unfreez
 #   }, 'rsum': 269.268, 'medr': 12.0, 'meanr': 53.576800000000006
 #}}
 
+#test
+git pull && python src/vqa.py --name test --server_lr 1e-5 --seed 0 --feature_dim 3 --pub_data_num 100 --client_num_per_round 1 --num_img_clients 1 --num_txt_clients 1 --num_mm_clients 1 --local_epochs 2 --comm_rounds 2
+
 
 git pull && python src/vqa.py --name vqa_0c_100k --server_lr 1e-5 --seed 0 --feature_dim 1024 --pub_data_num 100000 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
 
@@ -36,8 +39,8 @@ git pull && python src/main.py --name full_200k --server_lr 1e-5 --pretrained_mo
 
 git pull && python src/vqa.py --name vqa_0c1_pre400k --server_lr 1e-5 --pretrained_model vqa_0c1_pre400k_best_1024_vqa.pt --seed 0 --feature_dim 1024 --pub_data_num 1 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
 git pull && python src/vqa.py --name vqa_allc50k_nort --server_lr 1e-5 --pretrained_model vqa_0c1_pre400k_best_1024_vqa.pt --seed 0 --feature_dim 1024 --pub_data_num 50000 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --no_retrieval_training
-git pull && python src/vqa.py --name vqa_allc50k_nort --server_lr 1e-5 --pretrained_model vqa_allc50k_nort_best_1024_vqa.pt --seed 0 --feature_dim 1024 --pub_data_num 50000 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --no_retrieval_training
+git pull && python src/vqa.py --name vqa_allc50k_nortv2 --server_lr 1e-5 --pretrained_model vqa_allc50k_nort_best_1024_vqa.pt --seed 0 --feature_dim 1024 --pub_data_num 50000 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --no_retrieval_training
 
 git pull && python src/vqa.py --name fd1k_fte0_nort_0c --pretrained_model 0c1f_best_1024_vqa.pt --server_lr 1e-5 --seed 0 --feature_dim 1024 --pub_data_num 1 --vqa_full_training_epoch 0 --no_retrieval_training --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
 
-git pull && python src/vqa.py --name lr3_0c_nort --server_lr 1e-3 --pretrained_model vqa_allc50k_nort_best_1024_vqa.pt --seed 0 --feature_dim 1024 --vqa_full_training_epoch 2 --pub_data_num 1 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
+git pull && python src/vqa.py --name lr4_0c_nort --server_lr 1e-4 --seed 0 --feature_dim 1024 --vqa_full_training_epoch 0 --pub_data_num 1 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0 --no_retrieval_training
