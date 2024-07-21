@@ -265,7 +265,7 @@ class ClientTrainer:
             self.classSize = len(self.data_dict)
             assert False, 'Dataset Not Supported!'
         self.class_label = torch.Tensor(np.array(range(self.classSize)))
-        print('output size: {}'.format(self.classSize))
+        print(f'ClientTrainer loadData dataset name: {self.dset_name} class size: {self.classSize}')
 
         return
 
