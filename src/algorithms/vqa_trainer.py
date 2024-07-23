@@ -211,7 +211,7 @@ class VQAEngine():
                 if vqa2_test_dataloader is not None and (i+1) % (128*2**n) == 0:
                     #vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader, 2)
                     #vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader, 500)
-                    vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader)
+                    #vqa_validation(1000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader)
                     vqa_validation(10000, self.fusion_model, self.vqa_meta, vqa2_test_dataloader)
                     n += 1
                     self.fusion_model.train()
