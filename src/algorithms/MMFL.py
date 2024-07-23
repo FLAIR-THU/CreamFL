@@ -106,6 +106,7 @@ class MMFL(object):
             self.vqa_engine = VQAEngine(args,self.engine, self.wandb)
 
         self.config.optimizer.learning_rate = self.args.server_lr
+        self.config.vqa_dropout = self.args.vqa_dropout
 
         self._dataloaders = self.dataloaders_global.copy()
         self.evaluator = COCOEvaluator(eval_method='matmul',
