@@ -203,7 +203,7 @@ class VQAEngine():
                     torch.nn.utils.clip_grad.clip_grad_norm_(self.fusion_model.parameters(),
                                                    self.config.train.grad_clip)
                 
-                loss_avg_rate = max(i, 99)
+                loss_avg_rate = min(i, 99)
                 loss_avg = (loss_avg * loss_avg_rate + loss.item()) / (loss_avg_rate + 1)
                 self.vqa_optimizer.step()
                 progress_bar.set_description(f"Epoch {epoch}, Iter {i}, l100: {loss_avg:.4f}")
