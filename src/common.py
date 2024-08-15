@@ -111,6 +111,7 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
         parser.add_argument('--vqa_cat_weight', type=str, default='1', choices=['1', 'count', 'count+1000'],)
         parser.add_argument('--vqa_full_training_epoch' , type=int, default=0, help='Number of epochs start training the model end to end.')        
         parser.add_argument('--vqa_data_size_per_epoch' , type=int, default=0, help='Number of data samples to use per epoch for global model training (default: 0 (same as pub_data_num), -1 (use all data)')
+        parser.add_argument('--vqa_filter_unknown', action='store_true', default=False, help='Filter unknown answers from the training and testing data.')
 
 
 def init_wandb(args, script=None):

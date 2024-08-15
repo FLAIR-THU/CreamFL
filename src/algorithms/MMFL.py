@@ -118,9 +118,9 @@ class MMFL(object):
             meta = VQAMetaData()
             meta.build_or_load_categories_top()
             self.vqa_meta = meta
-            self.vqa_dataloader = vqa2_dataloader(vqa_dataset, train=True)
+            self.vqa_dataloader = vqa2_dataloader(vqa_dataset, train=True, filter_unanswered=args.vqa_filter_unanswered, meta=meta)
             test_dataset = datasets.load_dataset("HuggingFaceM4/VQAv2", split="validation")
-            self.vqa_test_loader = vqa2_dataloader(test_dataset)
+            self.vqa_test_loader = vqa2_dataloader(test_dataset, filter_unanswered=args.vqa_filter_unanswered, meta=meta)
             self.vqa_engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local, meta)
             #print_model_tree(self.vqa_engine.fusion_model)
             if args.pretrained_model.endswith('_vqa.pt'):

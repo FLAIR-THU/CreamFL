@@ -14,6 +14,7 @@ sys.path.append("../../..")
 
 from src.custom_datasets._dataloader import image_to_caption_collate_fn
 from src.custom_datasets.coco import CocoCaptionsCap
+from src.algorithms.vqa_trainer import VQAMetaData, unknown_category_id
 
 
 #  COCO
@@ -197,12 +198,18 @@ def vqa2_dataloader(dataset,
                     num_workers=12,
                     batch_size=64,
                     cutout_prob=0.0,
-                    train=False,):
+                    train=False,
+                    filter_unanswered=False,
+                    meta:VQAMetaData = None):
     transform = imagenet_transform(
         random_resize_crop=train,
         random_erasing_prob=cutout_prob,
         handle_gray=True,
     )
+    if filter_unanswered:
+        def filter_fn(example):
+            return meta.get_category_id(example['multiple_choice_answer']) != unknown_category_id
+        dataset = dataset.filter(filter_fn)
     def collate_fn():
         def func(examples):
             batch = {}
