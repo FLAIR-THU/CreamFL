@@ -218,6 +218,7 @@ def vqa2_dataloader(dataset,
             batch['question_type'] = [example['question_type'] for example in examples]
             batch['question_rest'] = [example['question'][len(example['question_type'])+1:] for example in examples]
             batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
+            batch['answers'] = [example['answers'] for example in examples]
             return batch
         return func
     return DataLoader(dataset,

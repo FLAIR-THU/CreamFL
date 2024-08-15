@@ -1,3 +1,5 @@
+from collections import Counter
+import random
 import torch
 from tqdm import tqdm
 from algorithms.optimizers import get_optimizer, get_lr_scheduler
@@ -76,8 +78,23 @@ class VQAEngine():
                        
                 self.vqa_optimizer.zero_grad()
                 outputs, last_features = self.fusion_model.forward(batch)
-                answers = batch['multiple_choice_answer']
-                targets = torch.tensor([self.vqa_meta.get_category_id(answer) for answer in answers]).to(self.device)
+                #answers = batch['multiple_choice_answer']
+                answers = batch['answers'] # for multiple answers, learn a random answer based on popularity
+                if isinstance(answers[0], list):
+                    picked_answers = []
+                    for i, answer_list in enumerate(answers):
+                        known = []
+                        for answer in answer_list:
+                            name = answer['answer']
+                            id = self.vqa_meta.get_category_id(name)
+                            if id != unknown_category_id:
+                                known.append(id) 
+                        if len(known) == 0:
+                            known = [unknown_category_id] 
+                        picked_answers.append(random.choice(known))
+                    targets = torch.tensor(picked_answers).to(self.device)
+                else:
+                    targets = torch.tensor([self.vqa_meta.get_category_id(answer) for answer in answers]).to(self.device)
                 loss = self.vqa_criterion(outputs, targets)
                 
                 if self.config.train.get('use_fp16'):
@@ -120,17 +137,26 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
     unknown_unknown = 0
     total = 0
     for j, testBatch in tqdm(enumerate(validation_dataloader)):
-        answers = testBatch['multiple_choice_answer']
+        #answers = testBatch['multiple_choice_answer'] # single answer
+        answers = testBatch['answers'] # multiple answers
         outputs, _ = fusion_model.forward(testBatch)
         for k, answer in enumerate(answers):
+            _, top_matches = torch.topk(output, min(5,max_cats+1), largest=True, sorted=True)
+            top_match_names = [meta.get_category_by_id(cat_id.item()) for cat_id in top_matches]
+            if isinstance(answer, list): # use testBatch['answers']
+                expected_answer = [f"'{item}'x{count}" for item, count in Counter([v['answer'] for v in answer]).most_common()]
+                for name in top_match_names:
+                    if f"'{name}'" in expected_answer :
+                        answer = name # answer is the logical expected answer
+                        break
+            else:
+                expected_answer = answer
             answer_id = meta.get_category_id(answer)
             if answer_id > max_cats:
                 answer_id = unknown_category_id
             output = outputs[k]
             if len(output) > max_cats:
                 output = output[:max_cats+1]
-            _, top_matches = torch.topk(output, min(5,max_cats+1), largest=True, sorted=True)
-            top_match_names = [meta.get_category_by_id(cat_id.item()) for cat_id in top_matches]
             if top_match_names[0] == answer:
                 right += 1
             if top_matches[0] == unknown_category_id:
@@ -143,7 +169,7 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
                 if top_matches[0] == unknown_category_id:
                     unknown_unknown += 1
             if total + k < 8:
-                tqdm.write(f"j {j}, k {k}, expected {answer}, got {top_match_names}")
+                tqdm.write(f"j {j}, k {k}, expected {expected_answer}, got {top_match_names}")
         total += len(answers)
         if total >= n:
             break
