@@ -199,14 +199,14 @@ def vqa2_dataloader(dataset,
                     batch_size=64,
                     cutout_prob=0.0,
                     train=False,
-                    filter_unanswered=False,
+                    filter_unknown=False,
                     meta:VQAMetaData = None):
     transform = imagenet_transform(
         random_resize_crop=train,
         random_erasing_prob=cutout_prob,
         handle_gray=True,
     )
-    if filter_unanswered:
+    if filter_unknown:
         def filter_fn(example):
             return meta.get_category_id(example['multiple_choice_answer']) != unknown_category_id
         dataset = dataset.filter(filter_fn)
