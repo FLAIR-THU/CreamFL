@@ -147,7 +147,7 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
             if isinstance(answer, list): # use testBatch['answers']
                 expected_answer = [f"'{item}'x{count}" for item, count in Counter([v['answer'] for v in answer]).most_common()]
                 for name in top_match_names:
-                    if f"'{name}'" in expected_answer :
+                    if name in [v['answer'] for v in answer] :
                         answer = name # answer is the logical expected answer so our guess can be matched
                         break
                 if isinstance(answer, list):
@@ -155,7 +155,7 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
             else:
                 expected_answer = answer
             answer_id = meta.get_category_id(answer)
-            match_type = "unset"
+            match_type = "wrong answer"
             if answer_id > max_cats:
                 answer_id = unknown_category_id
             if len(output) > max_cats:
