@@ -141,6 +141,7 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
         answers = testBatch['answers'] # multiple answers
         outputs, _ = fusion_model.forward(testBatch)
         for k, answer in enumerate(answers):
+            output = outputs[k]
             _, top_matches = torch.topk(output, min(5,max_cats+1), largest=True, sorted=True)
             top_match_names = [meta.get_category_by_id(cat_id.item()) for cat_id in top_matches]
             if isinstance(answer, list): # use testBatch['answers']
@@ -154,7 +155,6 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
             answer_id = meta.get_category_id(answer)
             if answer_id > max_cats:
                 answer_id = unknown_category_id
-            output = outputs[k]
             if len(output) > max_cats:
                 output = output[:max_cats+1]
             if top_match_names[0] == answer:
