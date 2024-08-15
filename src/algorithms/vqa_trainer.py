@@ -155,23 +155,29 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
             else:
                 expected_answer = answer
             answer_id = meta.get_category_id(answer)
+            match_type = "unset"
             if answer_id > max_cats:
                 answer_id = unknown_category_id
             if len(output) > max_cats:
                 output = output[:max_cats+1]
             if top_match_names[0] == answer:
                 right += 1
+                match_type = "first"
             if top_matches[0] == unknown_category_id:
                 unknown_outputs += 1
+                match_type = "unknown output"
                 if top_match_names[1] == answer:
                     unknown_right += 1
+                    match_type = "second"
             if answer_id == unknown_category_id:
                 unknown_answers += 1
                 answer = unknown_category + answer # mark answers not in the training set
+                match_type = "unknown answer"
                 if top_matches[0] == unknown_category_id:
                     unknown_unknown += 1
-            if total + k < 8:
-                tqdm.write(f"j {j}, k {k}, expected {expected_answer}, got {top_match_names}")
+                    match_type = "unknown unknown"
+            if total + k < 16:
+                tqdm.write(f"j {j}, k {k}, expected {expected_answer}, got {top_match_names}, match type {match_type}")
         total += len(answers)
         if total >= n:
             break
