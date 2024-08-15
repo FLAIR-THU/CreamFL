@@ -14,7 +14,7 @@ sys.path.append("../../..")
 
 from src.custom_datasets._dataloader import image_to_caption_collate_fn
 from src.custom_datasets.coco import CocoCaptionsCap
-from src.algorithms.vqa_trainer import VQAMetaData, unknown_category_id
+from src.algorithms.vqa_meta import VQAMetaData, unknown_category_id
 
 
 #  COCO

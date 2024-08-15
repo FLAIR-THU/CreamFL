@@ -24,7 +24,8 @@ from src.utils.color_lib import RGBmean, RGBstdv
 
 from src.algorithms.eval_coco import COCOEvaluator
 from src.algorithms.retrieval_trainer import TrainerEngine
-from src.algorithms.vqa_trainer import VQAEngine, VQAMetaData, vqa_validation
+from src.algorithms.vqa_meta import VQAMetaData
+from src.algorithms.vqa_trainer import VQAEngine, vqa_validation
 from src.utils.config import parse_config
 from src.utils.load_datasets import prepare_coco_dataloaders, vqa2_dataloader
 from src.utils.logger import PythonLogger

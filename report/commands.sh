@@ -60,3 +60,6 @@ git pull && python src/vqa.py --name vqa100k_2c10t50k --server_lr 1e-5 --pretrai
 git pull && python src/vqa.py --name vqa_cw1k_0c50k --vqa_cat_weight count+1000 --server_lr 1e-5 --pretrained_model vqa_0c50k_best_1024_vqa.pt --seed 0 --feature_dim 1024 --pub_data_num 50000 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0 --comm_rounds 100
 
 git pull && python src/vqa.py --name vqa_full50k_nort --server_lr 1e-5 --seed 0 --feature_dim 1024 --pub_data_num 50000 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --no_retrieval_training
+
+
+git pull && python src/vqa.py --name f_all_0c_nort --server_lr 1e-5 --pretrained_model vqa100kd01_2c50k_last_1024_vqa.pt --seed 0 --feature_dim 1024 --vqa_data_size_per_epoch -1 --pub_data_num 1 --comm_rounds 10 --vqa_dropout 0 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
