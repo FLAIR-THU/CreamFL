@@ -82,7 +82,7 @@ class VQAEngine():
                 answers = batch['answers'] # for multiple answers, learn a random answer based on popularity
                 if isinstance(answers[0], list):
                     picked_answers = []
-                    for i, answer_list in enumerate(answers):
+                    for answer_list in answers:
                         known = []
                         for answer in answer_list:
                             name = answer['answer']
