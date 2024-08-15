@@ -148,8 +148,10 @@ def vqa_validation(n, fusion_model, meta, validation_dataloader, max_cats = 3000
                 expected_answer = [f"'{item}'x{count}" for item, count in Counter([v['answer'] for v in answer]).most_common()]
                 for name in top_match_names:
                     if f"'{name}'" in expected_answer :
-                        answer = name # answer is the logical expected answer
+                        answer = name # answer is the logical expected answer so our guess can be matched
                         break
+                if isinstance(answer, list):
+                    answer = answer[0]['answer'] # no matches, pick the first answer
             else:
                 expected_answer = answer
             answer_id = meta.get_category_id(answer)
