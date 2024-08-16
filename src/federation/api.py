@@ -9,6 +9,11 @@ import torch
 import hashlib
 import requests
 
+import sys
+sys.path.append("./")
+sys.path.append("../")
+sys.path.append("../../")
+sys.path.append("../../../")
 from src.utils.load_datasets import prepare_coco_dataloaders
 
 from context import Context
