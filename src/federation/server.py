@@ -2,22 +2,21 @@
 import json
 from http import HTTPStatus
 # external dependencies
-from flask import Flask, request
-# internal dependencies
-import sys
-from src.algorithms.retrieval_trainer import TrainerEngine
-from src.utils.load_datasets import imagenet_transform
-from src.algorithms.eval_coco import COCOEvaluator
+from flask import Flask, request, send_file
 from PIL import Image
 from uuid import uuid4
-from flask import send_file
 import numpy as np
+import api, context, os
+import torch
+# internal dependencies
+import sys
 sys.path.append("./")
 sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
-import api, context, os
-import torch
+from src.algorithms.retrieval_trainer import TrainerEngine
+from src.utils.load_datasets import imagenet_transform
+from src.algorithms.eval_coco import COCOEvaluator
 from src.utils.tensor_utils import to_numpy
 server = Flask(__name__)
 
