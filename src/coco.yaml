@@ -1,7 +1,7 @@
 dataloader:
   batch_size: 64
   eval_batch_size: 64
-  num_workers: 12
+  num_workers: 16
   crop_size: 224
   word_dim: 300
   random_erasing_prob: 0.2
@@ -9,8 +9,8 @@ dataloader:
 
 model:
   name: pcme
-  embed_dim: 2048  # 2048 origin
-  cnn_type: resnet101  # res152 origin
+  embed_dim: 2048  # (ignored value, set in code)  2048 origin
+  cnn_type: resnet101  # (ignored value, set in code) res152 origin
   wemb_type: glove
   word_dim: 300
   cache_dir: /data/mmdata/log/server
@@ -50,13 +50,13 @@ criterion:
 train:
   model_save_path: model_last_no_prob.pth
   best_model_save_path: model_best_no_prob.pth
-  finetune_epochs: 15
+  finetune_epochs: 30 # not used
   finetune_lr_decay: 0.1
   log_step: 100
   grad_clip: 2
-  val_epochs: 5
+  val_epochs: 10 # not used
   use_fp16: False
   output_file: model_noprob.log
 
 vqa_hidden_sizes: [1024,1024]
-vqa_dropout: 0.0
+vqa_dropout: 0.0  # (ignored value, set in code)

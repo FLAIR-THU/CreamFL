@@ -74,3 +74,14 @@ git pull && python src/vqa.py --name f_100k_0c_nort --server_lr 1e-5 --pretraine
 git pull && python src/vqa.py --name f0_all_allc50k_nort_run2 --server_lr 1e-5 --pretrained_model f0_all_allc50k_nort_best_1024_vqa.pt --client_init_local_epochs 5 --seed 0 --feature_dim 1024 --vqa_filter_unknown --vqa_data_size_per_epoch -1 --pub_data_num 50000 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --no_retrieval_training  --comm_rounds 30
 
 git pull && python src/vqa.py --name f0_all_0c_nort --server_lr 1e-5 --seed 0 --feature_dim 1024 --vqa_filter_unknown --vqa_data_size_per_epoch -1 --pub_data_num 1 --no_retrieval_training  --comm_rounds 30 --vqa_dropout 0 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
+git pull && python src/vqa.py --name f1_100k_0c_nort --server_lr 1e-5 --pretrained_model f0_all_0c_nort_best_1024_vqa.pt --seed 0 --feature_dim 1024 --vqa_filter_unknown --vqa_data_size_per_epoch 100000 --pub_data_num 1 --no_retrieval_training  --comm_rounds 300 --vqa_dropout 0 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
+
+
+git pull && python src/vqa.py --name f0_100k_0c50k --server_lr 1e-5 --seed 0 --feature_dim 1024 --vqa_filter_unknown --vqa_data_size_per_epoch 100000 --pub_data_num 50000  --comm_rounds 300 --vqa_dropout 0 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
+git pull && python src/vqa.py --name f2_100k_0c_nort_from50k --server_lr 1e-5 --pretrained_model f0_100k_0c50k_best_1024_vqa.pt --seed 0 --feature_dim 1024 --vqa_filter_unknown --vqa_data_size_per_epoch 100000 --pub_data_num 1 --no_retrieval_training --comm_rounds 300 --vqa_dropout 0 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
+
+
+git pull && python src/vqa.py --name f3all_0c_nort_pre400k --server_lr 1e-5 --pretrained_model base_0c400k_best_1024_net.pt --seed 0 --feature_dim 1024 --pub_data_num 1 --vqa_filter_unknown --vqa_data_size_per_epoch -1 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0 --vqa_full_training_epoch 10 --no_retrieval_training --comm_rounds 30
+
+git pull && python src/vqa.py --name f3all_0c_nort_pre_raw --server_lr 1e-5 --seed 0 --feature_dim 1024 --pub_data_num 1 --vqa_filter_unknown --vqa_data_size_per_epoch -1 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0 --vqa_full_training_epoch 10 --no_retrieval_training --comm_rounds 30
+git pull && python src/vqa.py --name f3all_allc_nort_pre_raw --server_lr 1e-5 --seed 0 --feature_dim 1024 --vqa_filter_unknown --vqa_data_size_per_epoch -1 --pub_data_num 50000 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --vqa_full_training_epoch 10 --no_retrieval_training --comm_rounds 30
