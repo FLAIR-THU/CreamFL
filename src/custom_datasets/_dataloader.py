@@ -385,7 +385,7 @@ def prepare_f30k_dataloaders(dataloader_config,
                              max_size,
                              vocab_path='./vocabs/coco_vocab.pkl',
                              client=-1,
-                             num_users=num_users,
+                             num_users=-1,
                              num_workers=12):
     """Prepare MS-COCO Caption train / val / test dataloaders
     Args:
