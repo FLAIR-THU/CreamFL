@@ -24,7 +24,7 @@ class F30kCaptionsCap(Dataset):
 
     def __init__(self, annFile='./dataset_k_split.pkl', train=True,
                  transform=None, target_transform=None, is_iid=False, client=-1, num_users=-1, max_size=0):
-        assert client > -1 and num_users < client, f'num_users ({num_users}) must be set when client ({client}) is set'
+        assert client == -1 or client < num_users, f'num_users ({num_users}) must be set when client ({client}) is set'
         split = 'train' if train else 'test'
         self.transform = transform
         self.data = pickle.load(open(annFile, 'rb'))
