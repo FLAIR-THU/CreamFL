@@ -112,7 +112,7 @@ class Client:
             config.model.embed_dim = self.args.feature_dim
             config.model.not_bert = True
             
-            self.trainer = MMClientTrainer(args, config, self.logger, client=data_partition_index, dset_name="flicker30k",
+            self.trainer = MMClientTrainer(args, config, self.logger, client=data_partition_index, num_users=args.num_mm_clients, dset_name="flicker30k",
                                     device='cuda',
                                     vocab_path='./src/custom_datasets/vocabs/coco_vocab.pkl',
                                     mlp_local=self.args.mlp_local)

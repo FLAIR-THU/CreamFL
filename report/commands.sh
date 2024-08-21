@@ -97,6 +97,11 @@ git pull && python src/vqa.py --name f3all_allc_nort_pre_raw --server_lr 1e-5 --
 10x3b: pretrain vqa fussion only, 10 rounds, 0 clients
 10x4b: global only vqa, 10 rounds, 0 clients
 
+
+10x2c234: creamfl retrival for 10 rounds, 2/3/4 clients
+10x3c234: pretrain vqa fussion only, 10 rounds, 2/3/4 clients
+10x4c234: creamfl vqa, 10 rounds, 2/3/4 clients
+
 git pull
 python src/main.py --name 10x1 --server_lr 1e-5 --seed 0 --feature_dim 1024 --pub_data_num 50000  --comm_rounds 10 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
 python src/main.py --name 10x2c --server_lr 1e-5 --pretrained_model 10x1_last_1024_net.pt --seed 0 --feature_dim 1024 --pub_data_num 50000  --comm_rounds 10 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --client_init_local_epochs 10
@@ -106,3 +111,7 @@ python src/vqa.py --name 10x4c --server_lr 1e-5 --pretrained_model 10x3c_last_10
 python src/main.py --name 10x2b --server_lr 1e-5 --pretrained_model 10x1_last_1024_net.pt --seed 0 --feature_dim 1024 --pub_data_num 50000  --comm_rounds 10 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0
 python src/vqa.py --name 10x3b --server_lr 1e-5 --pretrained_model 10x2b_last_1024_net.pt --seed 0 --feature_dim 1024 --pub_data_num 1 --vqa_filter_unknown --vqa_data_size_per_epoch -1 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0 --vqa_full_training_epoch 99 --no_retrieval_training --comm_rounds 10
 python src/vqa.py --name 10x4b --server_lr 1e-5 --pretrained_model 10x3b_last_1024_vqa.pt --seed 0 --feature_dim 1024 --pub_data_num 1 --vqa_filter_unknown --vqa_data_size_per_epoch -1  --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0 --comm_rounds 10 --no_retrieval_training
+
+python src/main.py --name 10x2c234 --server_lr 1e-5 --pretrained_model 10x1_last_1024_net.pt --seed 0 --feature_dim 1024 --pub_data_num 50000  --comm_rounds 10 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --client_init_local_epochs 10 --client_num_per_round 4 --num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3
+python src/vqa.py --name 10x3c234 --server_lr 1e-5 --pretrained_model 10x2c234_last_1024_net.pt --seed 0 --feature_dim 1024 --pub_data_num 1 --vqa_filter_unknown --vqa_data_size_per_epoch -1 --disable_distill --client_num_per_round 0 --num_img_clients 0 --num_txt_clients 0 --num_mm_clients 0 --vqa_full_training_epoch 99 --no_retrieval_training --comm_rounds 10
+python src/vqa.py --name 10x4c234 --server_lr 1e-5 --pretrained_model 10x3c234_last_1024_vqa.pt --seed 0 --feature_dim 1024 --pub_data_num 50000 --vqa_filter_unknown --vqa_data_size_per_epoch -1 --comm_rounds 10 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5 --no_retrieval_training  --client_init_local_epochs 10 --client_num_per_round 4 --num_img_clients 2 --num_txt_clients 2 --num_mm_clients 3

@@ -23,7 +23,8 @@ import pickle
 class F30kCaptionsCap(Dataset):
 
     def __init__(self, annFile='./dataset_k_split.pkl', train=True,
-                 transform=None, target_transform=None, is_iid=False, client=-1, max_size=0):
+                 transform=None, target_transform=None, is_iid=False, client=-1, num_users=-1, max_size=0):
+        assert client > -1 and num_users < client, f'num_users ({num_users}) must be set when client ({client}) is set'
         split = 'train' if train else 'test'
         self.transform = transform
         self.data = pickle.load(open(annFile, 'rb'))
@@ -34,7 +35,7 @@ class F30kCaptionsCap(Dataset):
 
         if client > -1 and train:
             # print(self.data)
-            indices = self.iid()[client] if is_iid else self.non_iid()[client]
+            indices = self.iid(num_users)[client] if is_iid else self.non_iid(num_users)[client]
             indices = np.array(list(indices)).astype(int)
 
             self.data = [self.data[i] for i in indices]
@@ -57,14 +58,14 @@ class F30kCaptionsCap(Dataset):
         else:
             self.target_transform = target_transform
 
-    def iid(self, root=os.environ['HOME']+'/data/mmdata/Flick30k/', num_users=20):
+    def iid(self, num_users, root=os.environ['HOME']+'/data/mmdata/Flick30k/'):
         """
         Sample I.I.D. client data from MNIST dataset
         :param dataset:
         :param num_users:
         :return: dict of image index
         """
-        pkl_path = root + 'client_iid.pkl'
+        pkl_path = root + f'client_iid_{num_users}.pkl'
         if os.path.exists(pkl_path):
             dict_users = pickle.load(open(pkl_path, 'rb'))
         else:
@@ -77,8 +78,8 @@ class F30kCaptionsCap(Dataset):
             pickle.dump(dict_users, open(pkl_path, 'wb'))
         return dict_users
 
-    def non_iid(self, root='./data_partition/', num_users=15):
-        pkl_path = root + 'client_noniid_flicker30k.pkl'
+    def non_iid(self, num_users, root='./data_partition/'):
+        pkl_path = root + f'client_noniid_{num_users}_flicker30k.pkl'
         if os.path.exists(pkl_path):
             dict_users = pickle.load(open(pkl_path, 'rb'))
         else:

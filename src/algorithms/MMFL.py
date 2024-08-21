@@ -208,7 +208,7 @@ class MMFL(object):
             self.mm_local_trainers = []
             for client_id in range(args.num_mm_clients):
                 self.mm_local_trainers.append(
-                    MMClientTrainer(args, config, self.logger, client=client_id, dset_name="flicker30k",
+                    MMClientTrainer(args, config, self.logger, client=client_id, num_users=args.num_mm_clients, dset_name="flicker30k",
                                     device='cuda',
                                     vocab_path='./src/custom_datasets/vocabs/coco_vocab.pkl',
                                     mlp_local=self.args.mlp_local))

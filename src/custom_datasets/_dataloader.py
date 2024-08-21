@@ -91,7 +91,7 @@ def _get_cub_file_paths(dataset_name, dataset_root, caption_root):
             Each split contains 100 train classes / 50 validation classes.
         - cub:
             The final split used for the final benchmark.
-            This split conntains 150 train classes / 50 unseen test classes (not in trainval)
+            This split contains 150 train classes / 50 unseen test classes (not in trainval)
     """
     if dataset_name == 'cub_trainval1':
         train_classes = './custom_datasets/annotations/cub/trainclasses1.txt'
@@ -110,7 +110,7 @@ def _get_cub_file_paths(dataset_name, dataset_root, caption_root):
         val_classes = './custom_datasets/annotations/cub/testclasses.txt'
         omit_ids = './custom_datasets/annotations/cub/seen_test_images.txt'
     else:
-        raise ValueError(f'Invalide dataset_name: {dataset_name}')
+        raise ValueError(f'Invalid dataset_name: {dataset_name}')
 
     image_root = os.path.join(dataset_root, 'images/')
 
@@ -167,7 +167,7 @@ def prepare_cub_dataloaders(dataloader_config,
                 Each split contains 100 train classes / 50 validation classes.
             - cub:
                 The final split used for the final benchmark.
-                This split conntains 150 train classes / 50 unseen test classes (not in trainval)
+                This split contains 150 train classes / 50 unseen test classes (not in trainval)
         dataset_root (str): root of your CUB images (see README.md for detailed dataset hierarchy)
         caption_root (str): root of your CUB captions (see README.md for detailed dataset hierarchy)
         vocab_path (str, optional): path for vocab pickle file (default: ./vocabs/cub_vocab.pkl).
@@ -358,7 +358,8 @@ def _get_F30k_loader(vocab,
                      split='train',
                      cutout_prob=0.0,
                      caption_drop_prob=0.0,
-                     client=-1):
+                     client=-1,
+                     num_users=-1):
     _image_transform = imagenet_transform(
         random_resize_crop=train,
         random_erasing_prob=cutout_prob,
@@ -368,14 +369,14 @@ def _get_F30k_loader(vocab,
 
     coco_dataset = F30kCaptionsCap(train=True if split == 'train' else False,
                                    transform=_image_transform,
-                                   target_transform=_caption_transform, client=client, max_size=max_size)
+                                   target_transform=_caption_transform, client=client, num_users=num_users, max_size=max_size)
     dataloader = DataLoader(coco_dataset,
                             batch_size=batch_size,
                             shuffle=train,
                             num_workers=num_workers,
                             collate_fn=image_to_caption_collate_fn,
                             pin_memory=False)
-    print(f'Loading F30k Caption: n_images {coco_dataset.n_images} n_captions {len(coco_dataset)}...')
+    print(f'Loading F30k Caption: split {split} n_images {coco_dataset.n_images} n_captions {len(coco_dataset)}...')
     return dataloader
 
 
@@ -384,6 +385,7 @@ def prepare_f30k_dataloaders(dataloader_config,
                              max_size,
                              vocab_path='./vocabs/coco_vocab.pkl',
                              client=-1,
+                             num_users=num_users,
                              num_workers=12):
     """Prepare MS-COCO Caption train / val / test dataloaders
     Args:
@@ -412,7 +414,8 @@ def prepare_f30k_dataloaders(dataloader_config,
         split='train',
         cutout_prob=tr_cutout_prob,
         caption_drop_prob=tr_caption_drop_prob,
-        client=client
+        client=client,
+        num_users=num_users,
     )
 
     # dataloaders['val'] = _get_F30k_loader(
@@ -432,7 +435,8 @@ def prepare_f30k_dataloaders(dataloader_config,
         batch_size=eval_batch_size,
         train=False,
         split='test',
-        client=client
+        client=client,
+        num_users=num_users
     )
 
     return dataloaders, vocab

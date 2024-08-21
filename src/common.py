@@ -92,6 +92,7 @@ def add_args(parser: argparse.ArgumentParser, is_vqa=False):
     parser.add_argument('--fed_config', default='fed_config.yaml', help="federation network configuration file")
     parser.add_argument('--client_name', help="client name, only used by clients")
     
+    # === vqa related option ===
     parser.add_argument('--no_retrieval_training', action='store_true', default=False,)
 
     
