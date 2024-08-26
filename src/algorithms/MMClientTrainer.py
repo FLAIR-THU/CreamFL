@@ -15,7 +15,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 import torch.nn as nn
 
-from src.algorithms.base import EngineBase
+from src.algorithms.base import EngineBase2
 from tqdm import tqdm
 import torch
 
@@ -87,7 +87,7 @@ gpuid = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 is_test = False
 
 
-class MMClientTrainer(EngineBase):
+class MMClientTrainer(EngineBase2):
 
     def run(self, global_img_feature, global_txt_feature, distill_index, global_train_loader, prefix=''):
         self.old_model = copy.deepcopy(self.model)

@@ -59,7 +59,7 @@ def parse_config(config_path, cache_dir=None, pretrained_resnet_model_path=None,
     return config
 
 
-class EngineBase(object):
+class EngineBase2(object):
     def __init__(self, args, config, logger, client=-1, num_users=-1, dset_name="flicker30k", device='cuda',
                  vocab_path='./custom_datasets/vocabs/coco_vocab.pkl', mlp_local=False):
         self.dset_name = dset_name
