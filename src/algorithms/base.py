@@ -60,7 +60,7 @@ def parse_config(config_path, cache_dir=None, pretrained_resnet_model_path=None,
 
 
 class EngineBase2(object):
-    def __init__(self, args, config, logger, client=-1, num_users=-1, dset_name="flicker30k", device='cuda',
+    def __init__(self, args, config, logger, client=-1, dset_name="flicker30k", device='cuda',
                  vocab_path='./custom_datasets/vocabs/coco_vocab.pkl', mlp_local=False):
         self.dset_name = dset_name
 
@@ -83,7 +83,7 @@ class EngineBase2(object):
 
         self.client = client
 
-        word2idx = self.set_dset(self.dset_name, client,num_users , vocab_path)
+        word2idx = self.set_dset(self.dset_name, client, args.num_mm_clients, vocab_path)
 
         self.config = config
         self.word2idx = word2idx

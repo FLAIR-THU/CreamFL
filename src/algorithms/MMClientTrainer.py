@@ -89,10 +89,6 @@ is_test = False
 
 class MMClientTrainer(EngineBase2):
     
-    def __init__(self, args, config, logger, client=-1, num_users=-1, dset_name="flicker30k", device='cuda',
-                 vocab_path='./custom_datasets/vocabs/coco_vocab.pkl', mlp_local=False):
-        super(MMClientTrainer, self).__init__(args, config, logger, client, num_users, dset_name, device, vocab_path, mlp_local)
-
     def run(self, global_img_feature, global_txt_feature, distill_index, global_train_loader, prefix=''):
         self.old_model = copy.deepcopy(self.model)
         self.old_model.eval().cuda()
