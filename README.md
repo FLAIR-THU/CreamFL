@@ -122,6 +122,24 @@ To reproduce CreamFL with BERT and ResNet101 as server models, run the following
 python src/main.py --name CreamFL --server_lr 1e-5 --agg_method con_w --contrast_local_inter --contrast_local_intra --interintra_weight 0.5
 ```
 
+## Run CreamFL retrieval parallely
+[1] Run global server
+```shell
+bash retri_center.sh
+```
+[2] Run txt client
+```shell
+bash client_txt_retri.sh
+```
+[3] Run img client
+```shell
+bash client_img_retri.sh
+```
+[4] Run mm client
+```shell
+bash client_mm_retri.sh
+```
+
 ## Citation
 
 If you find the paper provides some insights into multimodal FL or our code useful 🤗, please consider citing:
