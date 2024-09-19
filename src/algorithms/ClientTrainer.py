@@ -10,8 +10,8 @@ from apex import amp
 from sklearn.metrics import pairwise_distances
 
 from src import losses
-from src.datasets.cifar import Cifar
-from src.datasets.dataset_L import caption_collate_fn, Language
+from src.custom_datasets.cifar import Cifar
+from src.custom_datasets.dataset_L import caption_collate_fn, Language
 from src.networks.language_model import EncoderText
 from src.networks.resnet_client import resnet18_client
 from src.utils.Reader import ImageReader
@@ -33,6 +33,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def seed_torch(seed=2021):
+    print(f'ClientTrainer.seed_torch called seed={seed}')
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
@@ -136,8 +137,8 @@ is_test = False
 class ClientTrainer:
     def __init__(self, args, dataset, dst, RGBmean, RGBstdv, data_dict, logger, global_test_set, inter_distance=4, loss='softmax',
                  gpuid='cuda:0', num_epochs=30, init_lr=0.0001, decay=0.1, batch_size=512,
-                 imgsize=256, num_workers=4, print_freq=10, save_step=10, scale=128, pool_type='max_avg', client_id=-1, wandb=None):
-        seed_torch()
+                 imgsize=256, num_workers=12, print_freq=10, save_step=10, scale=128, pool_type='max_avg', client_id=-1, wandb=None):
+        # seed_torch()
         self.args = args
         if dataset == 'Flickr30k':
             init_lr = 0.0002
@@ -197,6 +198,11 @@ class ClientTrainer:
         self.old_model.cuda()
 
         self.lr_scheduler(self.cur_epoch)
+        
+        if self.local_epoch == 0:
+            for i in range(self.args.client_init_local_epochs):
+                self.local_epoch += 1
+                self.tra(global_img_feature, global_txt_feature, distill_index, global_train_loader)
 
         for i in range(self.local_epochs):
             self.local_epoch += 1
@@ -264,7 +270,7 @@ class ClientTrainer:
             self.classSize = len(self.data_dict)
             assert False, 'Dataset Not Supported!'
         self.class_label = torch.Tensor(np.array(range(self.classSize)))
-        print('output size: {}'.format(self.classSize))
+        print(f'ClientTrainer loadData dataset name: {self.dset_name} class size: {self.classSize}')
 
         return
 
@@ -319,7 +325,7 @@ class ClientTrainer:
         # Set model to training mode
         self.model.train()
 
-        for i, data in enumerate(self.train_loader):
+        for i, data in tqdm(enumerate(self.train_loader), total=len(self.train_loader)):
             self.optimizer.zero_grad()
             with torch.set_grad_enabled(True):
                 center_labels_var = torch.autograd.Variable(self.class_label.to(torch.long)).to(self.gpuid)
@@ -548,6 +554,9 @@ class ClientTrainer:
                 self.test_top1.update(prec1[0], inputs_bt.size(0))
                 self.test_top5.update(prec5[0], inputs_bt.size(0))
 
+            current_path = os.path.dirname(os.path.dirname(__file__))
+            with open(os.path.join(current_path, 'accuracy.txt'), 'a') as f:
+                f.write(f'{self.local_epoch}:{self.test_top1.avg:.3f},{self.test_top5.avg:.3f}\n')
         printnreset(self.dset_name)
         self.model.train()
 
@@ -670,5 +679,5 @@ class ClientTrainer:
                                                     opt_level='O2')
 
     def __getattr__(self, k):
-        if k.startwith("__"):
+        if k.startswith("__"):
             raise AttributeError

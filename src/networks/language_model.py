@@ -28,7 +28,7 @@ def get_pad_mask(max_length, lengths, set_pad_to_one=True):
 class EncoderText(nn.Module):
     def __init__(self, wemb_type='glove', word_dim=300, embed_dim=2048, num_class=4, scale=128, mlp_local=False):
         super(EncoderText, self).__init__()
-        with open('src/datasets/vocabs/coco_vocab.pkl',
+        with open('src/custom_datasets/vocabs/coco_vocab.pkl',
                   'rb') as fin:
             vocab = pickle.load(fin)
         word2idx = vocab['word2idx']
@@ -77,6 +77,7 @@ class EncoderText(nn.Module):
             assert wemb.vectors.shape[1] == word_dim, f'wemb.vectors.shape {wemb.vectors.shape}'
 
             # quick-and-dirty trick to improve word-hit rate
+            print(f'improving word-hit rate')
             missing_words = []
             for word, idx in word2idx.items():
                 if word not in wemb.stoi:

@@ -227,7 +227,7 @@ class COCOEvaluator(object):
                  q_ids, g_ids,
                  q_classes=None, g_classes=None,
                  topk=10,
-                 batch_size=1024):
+                 batch_size=32):
         if len(q_features) != len(q_ids):
             raise RuntimeError('length mismatch {}, {}'.format(q_features.shape,
                                                                q_ids.shape))
@@ -273,7 +273,7 @@ class COCOEvaluator(object):
     @torch.no_grad()
     def evaluate_recall(self, q_features, g_features, q_labels, g_labels,
                         q_ids=None, g_ids=None,
-                        batch_size=1024):
+                        batch_size=32):
         """Evaluate recall
 
         Args:
@@ -332,6 +332,52 @@ class COCOEvaluator(object):
         }
 
         return scores
+
+    @torch.no_grad()
+    def evaluate_single(self, q_features, g_features, q_labels, g_labels):
+        """Evaluate recall
+
+        Args:
+            q_features (tensor): N_q x d query features
+            g_features (tensor): N_g x d gallery features
+            q_labels (tensor): N query labels
+            g_labels (tensor): N gallery labels
+        """
+        if len(q_features) != len(q_labels):
+            raise RuntimeError('length mismatch {}, {}'.format(q_features.shape,
+                                                               q_labels.shape))
+        if len(g_features) != len(g_labels):
+            raise RuntimeError('length mismatch {}, {}'.format(g_features.shape,
+                                                               g_labels.shape))
+        n_queries = len(q_labels)
+        n_galleries = len(g_labels)
+        best_pred_ranks = np.zeros(n_queries)
+
+        if self.eval_method == 'matmul':
+            pmm = ParallelMatMulModule()
+            g_features = g_features.view(n_galleries * self.n_embeddings, -1).t()
+        elif self.eval_method == 'matching_prob':
+            pmm = MatchingProbModule(self.criterion.match_prob)
+        pmm.set_g_features(g_features)
+
+        q_features = q_features.to(self.eval_device)
+
+        for q_indices in self.pbar(batch(range(n_queries), batch_size=batch_size)):
+            q_indices = np.array(q_indices)
+
+            if self.eval_method != 'matching_prob':
+                _q_feature = q_features[q_indices, :]
+                _q_feature = _q_feature.view(len(q_indices) * self.n_embeddings, -1)
+            else:
+                _q_feature = q_features[q_indices, :, :]
+            _, pred_ranks = pmm(_q_feature, n_embeddings=self.n_embeddings)
+
+            for idx, q_idx in enumerate(q_indices):
+                pos_indices = np.where(g_labels == q_labels[q_idx])[0]
+                _pred_ranks = [torch.where(pred_ranks[idx] == pos_idx)[0][0].item() for pos_idx in pos_indices]
+                best_pred_ranks[q_idx] = min(_pred_ranks)
+
+        return best_pred_ranks
 
     def evaluate_n_fold(self, extracted_features, n_crossfolds, n_images_per_crossfold,
                         n_captions_per_crossfold, eval_batch_size):
@@ -393,7 +439,7 @@ class COCOEvaluator(object):
     def evaluate(self, dataloader, n_crossfolds=None,
                  n_images_per_crossfold=1000,
                  n_captions_per_crossfold=5000,
-                 eval_batch_size=1024,
+                 eval_batch_size=32,
                  key=None):
         """evaluate image-to-caption and caption-to-image retrieval tasks.
         """

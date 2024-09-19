@@ -15,7 +15,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 import torch.nn as nn
 
-from src.algorithms.base import EngineBase
+from src.algorithms.base import EngineBase2
 from tqdm import tqdm
 import torch
 
@@ -28,6 +28,7 @@ from src.utils.serialize_utils import flatten_dict
 
 
 def seed_torch(seed=2021):
+    print(f'MMClientTrainer.seed_torch called seed={seed}')
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
@@ -86,8 +87,8 @@ gpuid = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 is_test = False
 
 
-class MMClientTrainer(EngineBase):
-
+class MMClientTrainer(EngineBase2):
+    
     def run(self, global_img_feature, global_txt_feature, distill_index, global_train_loader, prefix=''):
         self.old_model = copy.deepcopy(self.model)
         self.old_model.eval().cuda()
@@ -96,6 +97,11 @@ class MMClientTrainer(EngineBase):
             self.model, self.optimizer = amp.initialize(self.model, self.optimizer,
                                                         opt_level='O2')
         self.model.train()
+        
+        if self.local_epoch == 0:
+            for i in range(self.args.client_init_local_epochs):
+                self.local_epoch += 1
+                self.train_epoch(global_img_feature, global_txt_feature, distill_index, global_train_loader, prefix='')
 
         for i in range(self.local_epochs):
             self.local_epoch += 1

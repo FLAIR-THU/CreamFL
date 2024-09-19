@@ -18,11 +18,11 @@ sys.path.append("../../")
 from src.algorithms.optimizers import get_optimizer
 from src.algorithms.optimizers import get_lr_scheduler
 from src.criterions import get_criterion
+from src.utils.load_datasets import load_vocab
 
 from src.networks.models import get_model
 from src.utils.config import parse_config
 from src.utils.serialize_utils import flatten_dict, torch_safe_load
-
 try:
     from apex import amp
 except ImportError:
@@ -80,8 +80,6 @@ class EngineBase(object):
         self.eval_prefix = ''
         if self.logger is not None:
             self.logger.log('start train')
-
-        self.img_code, self.txt_code, self.mm_txt_code, self.mm_img_code = None, None, None, None
 
     def model_to_device(self):
         self.model.to(self.device)
@@ -173,6 +171,36 @@ class EngineBase(object):
                                                                                             model_hash,
                                                                                             load_keys))
 
+
+    def load_models2(self, state_dict_path, evaluator, load_keys=None):
+        with open(state_dict_path, 'rb') as fin:
+            model_hash = hashlib.sha1(fin.read()).hexdigest()
+            self.metadata['pretrain_hash'] = model_hash
+
+        state_dict = torch.load(state_dict_path, map_location='cpu')
+
+        vocab_path = './src/custom_datasets/vocabs/coco_vocab.pkl'
+        vocab = load_vocab(vocab_path)
+        self.create(munch.munchify(state_dict['config']), vocab.word2idx, evaluator, False)
+        if 'model' not in state_dict:
+            torch_safe_load(self.model, state_dict)
+            return
+
+        if not load_keys:
+            load_keys = ['model', 'criterion', 'optimizer', 'lr_scheduler']
+        for key in load_keys:
+            try:
+                torch_safe_load(getattr(self, key), state_dict[key])
+            except RuntimeError as e:
+                print(e)
+                if self.logger is not None:
+                    self.logger.log('Unable to import state_dict, missing keys are found. {}'.format(e))
+                    torch_safe_load(getattr(self, key), state_dict[key])
+        if self.logger is not None:
+            self.logger.log('state dict is loaded from {} (hash: {}), load_key ({})'.format(state_dict_path,
+                                                                                            model_hash,
+                                                                                            load_keys))
+
     def load_state_dict(self, state_dict_path, load_keys=None):
         state_dict = torch.load(state_dict_path)
         config = parse_config(state_dict['config'])
@@ -212,6 +240,7 @@ class TrainerEngine(EngineBase):
                 nn.utils.clip_grad.clip_grad_norm_(self.model.parameters(),
                                                    self.config.train.grad_clip)
             self.optimizer.step()
+                    
 
     def report_scores(self, step, scores, metadata, prefix=''):
         report_dict = {data_key: flatten_dict(_scores, sep='_')
@@ -224,8 +253,13 @@ class TrainerEngine(EngineBase):
         if 'lr' in metadata:
             report_dict['{}lr'.format(prefix)] = metadata['lr']
 
-        report_dict[
-            'summary'] = f"{report_dict['__test__n_fold_i2t_recall_1']}, {report_dict['__test__n_fold_i2t_recall_5']}, {report_dict['__test__n_fold_i2t_recall_10']}, {report_dict['__test__n_fold_t2i_recall_1']}, {report_dict['__test__n_fold_t2i_recall_5']}, {report_dict['__test__n_fold_t2i_recall_10']}, {report_dict['__test__i2t_recall_1']}, {report_dict['__test__i2t_recall_5']}, {report_dict['__test__i2t_recall_10']}, {report_dict['__test__t2i_recall_1']}, {report_dict['__test__t2i_recall_5']}, {report_dict['__test__t2i_recall_10']}"
+        # print all keys of report_dict
+        # print(report_dict.keys())
+        # compatibility with different version dependencies
+        if 'test__n_fold_i2t_recall_1' in report_dict:
+            report_dict['summary'] = f"{report_dict['test__n_fold_i2t_recall_1']}, {report_dict['test__n_fold_i2t_recall_5']}, {report_dict['test__n_fold_i2t_recall_10']}, {report_dict['test__n_fold_t2i_recall_1']}, {report_dict['test__n_fold_t2i_recall_5']}, {report_dict['test__n_fold_t2i_recall_10']}, {report_dict['test__i2t_recall_1']}, {report_dict['test__i2t_recall_5']}, {report_dict['test__i2t_recall_10']}, {report_dict['test__t2i_recall_1']}, {report_dict['test__t2i_recall_5']}, {report_dict['test__t2i_recall_10']}"
+        else:
+            report_dict['summary'] = f"{report_dict['__test__n_fold_i2t_recall_1']}, {report_dict['__test__n_fold_i2t_recall_5']}, {report_dict['__test__n_fold_i2t_recall_10']}, {report_dict['__test__n_fold_t2i_recall_1']}, {report_dict['__test__n_fold_t2i_recall_5']}, {report_dict['__test__n_fold_t2i_recall_10']}, {report_dict['__test__i2t_recall_1']}, {report_dict['__test__i2t_recall_5']}, {report_dict['__test__i2t_recall_10']}, {report_dict['__test__t2i_recall_1']}, {report_dict['__test__t2i_recall_5']}, {report_dict['__test__t2i_recall_10']}"
         if self.logger is not None:
             self.logger.report(report_dict,
                                prefix='[Eval] Report @step: ',
@@ -236,7 +270,7 @@ class TrainerEngine(EngineBase):
         if self.logger is not None:
             self.logger.update_tracker(tracker_data)
 
-
+# not used
 class rawTrainerEngine(EngineBase):
 
     def _train_epoch(self, dataloader, cur_epoch, prefix='', pub_data_ratio=1.):

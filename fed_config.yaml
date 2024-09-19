@@ -1,0 +1,45 @@
+wandb:
+  name: "cream_api"
+
+feature_store: "/tmp/cream_api" # the path to the feature store where client and global features are shared.
+
+# server configuration
+server:
+  api_url: "http://localhost:2323/cream_api"
+  min_clients: 3 # the number of required clients reporting to start global distillation.
+  max_clients: 3 # the number of clients reached to start global distillation immediately.
+  wait_duration: 10m # the duration to wait for clients to report before starting global distillation.
+
+
+# clients configuration
+clients:
+  - name: "txt_0"
+    data_type: txt # img, txt, or mm: the type of data the client is handling.
+    local_epochs: 5
+    data_partition: "client_AG_NEWS_10_nets_120000_samples_hetero_0.1.pkl" 
+    data_partition_index: 0 # This is only for testing purposes. In a real-world scenario, the data will not be loaded from the same dataset
+  - name: "txt_1"
+    data_type: txt # img, txt, or mm: the type of data the client is handling.
+    local_epochs: 5
+    data_partition: "client_AG_NEWS_10_nets_120000_samples_hetero_0.1.pkl" 
+    data_partition_index: 1 # This is only for testing purposes. In a real-world scenario, the data will not be loaded from the same dataset
+  - name: "img_0"
+    data_type: img # img, txt, or mm: the type of data the client is handling.
+    local_epochs: 5
+    data_partition_index: 0 # This is only for testing purposes. In a real-world scenario, the data will not be loaded from the same dataset
+  - name: "img_1"
+    data_type: img # img, txt, or mm: the type of data the client is handling.
+    local_epochs: 5
+    data_partition_index: 1 # This is only for testing purposes. In a real-world scenario, the data will not be loaded from the same dataset
+  - name: "mm_0"
+    data_type: mm
+    local_epochs: 5
+    data_partition_index: 0
+  - name: "mm_1"
+    data_type: mm
+    local_epochs: 5
+    data_partition_index: 1
+  - name: "mm_2"
+    data_type: mm
+    local_epochs: 5
+    data_partition_index: 2

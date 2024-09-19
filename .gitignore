@@ -1,0 +1,8 @@
+__pycache__
+wandb/
+*.log
+*-best_model.pt
+*-last_model.pt
+coco_subset_idx_*
+*.bbl
+*.synctex.gz

@@ -12,21 +12,24 @@ sys.path.append("../")
 sys.path.append("../..")
 sys.path.append("../../..")
 
-from src.datasets._dataloader import image_to_caption_collate_fn
-from src.datasets.coco import CocoCaptionsCap
+from src.custom_datasets._dataloader import image_to_caption_collate_fn
+from src.custom_datasets.coco import CocoCaptionsCap
+from src.algorithms.vqa_meta import VQAMetaData, unknown_category_id
 
 
 #  COCO
 def prepare_coco_dataloaders(dataloader_config,
                              dataset_root,
+                             subset_num, # was hard coded to 50000
+                             client_subset_num, # was hard coded to 10000
                              vocab_path='./vocabs/coco_vocab.pkl',
-                             num_workers=6, tsne=False, client=-1):
+                             num_workers=12, tsne=False, client=-1):
     """Prepare MS-COCO Caption train / val / test dataloaders
     Args:
         dataloader_config (dict): configuration file which should contain "batch_size"
         dataset_root (str): root of your MS-COCO dataset (see README.md for detailed dataset hierarchy)
         vocab_path (str, optional): path for vocab pickle file (default: ./vocabs/coco_vocab.pkl).
-        num_workers (int, optional): num_workers for the dataloaders (default: 6)
+        num_workers (int, optional): num_workers for the dataloaders (default: 12)
     Returns:
         dataloaders (dict): keys = ["train", "val", "te"], values are the corresponding dataloaders.
         vocab (Vocabulary object): vocab object
@@ -63,10 +66,11 @@ def prepare_coco_dataloaders(dataloader_config,
             cutout_prob=tr_cutout_prob,
             caption_drop_prob=tr_caption_drop_prob,
             subset=False,
-            client=client
+            client=client,
+            client_subset_num=client_subset_num
         )
     else:
-        dataloaders['train_subset_50000'] = _get_coco_loader(
+        dataloaders[f'train_subset_{subset_num}'] = _get_coco_loader(
             image_root, train_ann, train_ids, vocab,
             num_workers=num_workers, batch_size=batch_size,
             train=True,
@@ -74,10 +78,11 @@ def prepare_coco_dataloaders(dataloader_config,
             extra_ids=train_extra_ids,
             cutout_prob=tr_cutout_prob,
             caption_drop_prob=tr_caption_drop_prob,
-            subset=True
+            subset=True,
+            subset_num=subset_num
         )
 
-        dataloaders['train_subset_eval_50000'] = _get_coco_loader(
+        dataloaders[f'train_subset_eval_{subset_num}'] = _get_coco_loader(
             image_root, train_ann, train_ids, vocab,
             num_workers=num_workers, batch_size=batch_size * 2,
             train=False,
@@ -85,19 +90,24 @@ def prepare_coco_dataloaders(dataloader_config,
             extra_ids=train_extra_ids,
             cutout_prob=tr_cutout_prob,
             caption_drop_prob=tr_caption_drop_prob,
-            subset=True
+            subset=True,
+            subset_num=subset_num
         )
 
     dataloaders['val'] = _get_coco_loader(
         image_root, val_ann, val_ids, vocab,
         num_workers=num_workers, batch_size=eval_batch_size,
         train=False,
+        #subset=True, #AttributeError: 'Subset' object has no attribute 'n_images'
+        #subset_num=subset_num
     )
 
     dataloaders['test'] = _get_coco_loader(
         image_root, val_ann, te_ids, vocab,
         num_workers=num_workers, batch_size=eval_batch_size if not tsne else 200,
         train=False,
+        #subset=True, #AttributeError: 'Subset' object has no attribute 'n_images'
+        #subset_num=subset_num
     )
 
     return dataloaders, vocab
@@ -106,10 +116,10 @@ def prepare_coco_dataloaders(dataloader_config,
 def _get_coco_file_paths(dataset_root):
     """Select proper train / val classes and omit id files.
     """
-    train_ids = np.load('./src/datasets/annotations/coco_train_ids.npy')
-    train_extra_ids = np.load('./src/datasets/annotations/coco_restval_ids.npy')
-    val_ids = np.load('./src/datasets/annotations/coco_dev_ids.npy')[:5000]
-    te_ids = np.load('./src/datasets/annotations/coco_test_ids.npy')
+    train_ids = np.load('./src/custom_datasets/annotations/coco_train_ids.npy')
+    train_extra_ids = np.load('./src/custom_datasets/annotations/coco_restval_ids.npy')
+    val_ids = np.load('./src/custom_datasets/annotations/coco_dev_ids.npy')[:5000]
+    te_ids = np.load('./src/custom_datasets/annotations/coco_test_ids.npy')
 
     image_root = os.path.join(dataset_root, 'allimages')
     train_ann = os.path.join(dataset_root, 'annotations/captions_train2014.json')
@@ -130,7 +140,8 @@ def _get_coco_loader(image_root,
                      caption_drop_prob=0.0,
                      subset=False,
                      subset_num=50000,
-                     client=-1):
+                     client=-1,
+                     client_subset_num=10000):
     _image_transform = imagenet_transform(
         random_resize_crop=train,
         random_erasing_prob=cutout_prob,
@@ -146,23 +157,29 @@ def _get_coco_loader(image_root,
                                    target_transform=_caption_transform, client=client)
 
     if subset:
-        if not os.path.exists('coco_subset_idx_file'):
-            full_idx = [i for i in range(566435)]
-            random.shuffle(full_idx)
-            idx = full_idx[0: 50000]
-            idx.sort()
-            if not os.path.exists('coco_subset_idx_file'):
-                with open('coco_subset_idx_file', 'wb') as f:
-                    pickle.dump(idx, f)
+        full_size = 566435
+        subset_num = min(subset_num, full_size)
 
-        if subset_num == 50000:
-            with open('coco_subset_idx_file', 'rb') as f:
-                idx = pickle.load(f)
+        subset_fn = f'coco_subset_idx_{subset_num}'
+        if not os.path.exists(subset_fn):
+            full_idx = [i for i in range(full_size)]
+            random.shuffle(full_idx)
+            idx = full_idx[0: subset_num]
+            idx.sort()
+            if not os.path.exists(subset_fn):
+                with open(subset_fn, 'wb') as f:
+                    pickle.dump(idx, f)
+        
+        with open(subset_fn, 'rb') as f:
+            idx = pickle.load(f)
 
         coco_dataset = torch.utils.data.Subset(coco_dataset, idx)
 
     elif client > -1:
-        idx = [i for i in range(100000+client*10000, 110000+client*10000)]
+        size_per_client = 10000 # 10000 is the old hard coded value
+        size_per_client = min(subset_num,client_subset_num)
+        range_start = 100000+client*size_per_client
+        idx = [i for i in range(range_start, range_start + size_per_client)]
         coco_dataset = torch.utils.data.Subset(coco_dataset, idx)
 
     dataloader = DataLoader(coco_dataset,
@@ -177,6 +194,40 @@ def _get_coco_loader(image_root,
         print(f'Loading COCO Caption: n_images {coco_dataset.n_images} n_captions {len(coco_dataset)}...')
     return dataloader
 
+def vqa2_dataloader(dataset,
+                    num_workers=12,
+                    batch_size=64,
+                    cutout_prob=0.0,
+                    train=False,
+                    filter_unknown=False,
+                    meta:VQAMetaData = None):
+    transform = imagenet_transform(
+        random_resize_crop=train,
+        random_erasing_prob=cutout_prob,
+        handle_gray=True,
+    )
+    if filter_unknown:
+        def filter_fn(example):
+            return meta.get_category_id(example['multiple_choice_answer']) != unknown_category_id
+        dataset = dataset.filter(filter_fn)
+    def collate_fn():
+        def func(examples):
+            batch = {}
+            batch['image'] = torch.stack([transform(example['image']) for example in examples])
+            batch['question'] = [example['question'] for example in examples]
+            batch['question_type'] = [example['question_type'] for example in examples]
+            batch['question_rest'] = [example['question'][len(example['question_type'])+1:] for example in examples]
+            batch['multiple_choice_answer'] = [example['multiple_choice_answer'] for example in examples]
+            batch['answers'] = [example['answers'] for example in examples]
+            return batch
+        return func
+    return DataLoader(dataset,
+                      batch_size=batch_size,
+                      shuffle=train,
+                      num_workers=num_workers,
+                      collate_fn=collate_fn(),
+                      )
+    
 
 def load_vocab(vocab_path):
     if isinstance(vocab_path, str):
@@ -237,6 +288,7 @@ def imagenet_transform(resize_size=256,
                        crop_size=224,
                        random_resize_crop=False,
                        random_erasing_prob=0.0,
+                       handle_gray=False,
                        custom_transforms=None):
     """Standard ImageNet transform with resize/crop/normalize.
 
@@ -258,6 +310,10 @@ def imagenet_transform(resize_size=256,
     else:
         transform.append(transforms.Resize(resize_size))
         transform.append(transforms.CenterCrop(crop_size))
+    if handle_gray:
+        transform.append(transforms.Lambda(
+            lambda img: img.convert("RGB")),  # Convert grayscale to RGB
+        )
     transform.append(transforms.ToTensor())
     transform.append(imagenet_normalize())
 

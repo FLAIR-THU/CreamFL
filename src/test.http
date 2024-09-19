@@ -1,0 +1,36 @@
+###
+POST http://localhost:2323/cream_api/inference
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+content-Disposition: form-data; name="file"
+
+/home/shannon/dev/projects/distributed_cream/uploads/52bbf136-11f5-46dc-be4f-33c9a75255f7.jpg
+--WebAppBoundary
+content-Disposition: form-data; name="captions"
+
+A bicycle replica with a clock as the front wheel.
+A dog is sniffing at a plate of food on a table.
+A mother and baby zebra walking in the grass.
+The bike has a clock as a tire.
+A motorcycle with its brake extended standing outside
+--WebAppBoundary
+content-Disposition: form-data; name="batch"
+
+False
+--WebAppBoundary--
+
+
+###
+POST http://localhost:2323/cream_api/upoad
+Content-Type: application/x-www-form-urlencoded
+
+
+###
+POST http://localhost:2323/cream_api/inference
+Content-Type: application/x-www-form-urlencoded
+
+config_path=/home/shannon/dev/projects/web/src/components/batch.json&batch=True
+
+### 获取详情
+GET http://localhost:5000/job?id=25

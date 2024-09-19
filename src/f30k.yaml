@@ -49,11 +49,11 @@ train:
   model_save_path: model_
   best_model_save_path: model_best.pth
   pretrain_epochs: 0
-  finetune_epochs: 30
+  finetune_epochs: 30 # not used
   finetune_lr_decay: 0.1
   log_step: 1000
   grad_clip: 2
-  val_epochs: 10
-  pretrain_val_epochs: 10
+  val_epochs: 10 # not used
+  pretrain_val_epochs: 10 # not used
   use_fp16: True
   output_file: model.log

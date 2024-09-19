@@ -8,24 +8,28 @@ import sys
 
 import torch
 import torch.nn as nn
-from torch.distributions import Categorical
+import datasets
 from tqdm import tqdm
+import wandb
 
 sys.path.append("./")
 sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("../../../")
 
-from src.datasets.load_FL_datasets import get_FL_trainloader, get_dataloader
+from src.custom_datasets.load_FL_datasets import get_FL_trainloader
 from src.algorithms.ClientTrainer import ClientTrainer
 from src.algorithms.MMClientTrainer import MMClientTrainer
 from src.utils.color_lib import RGBmean, RGBstdv
 
 from src.algorithms.eval_coco import COCOEvaluator
-from src.algorithms.retrieval_trainer import TrainerEngine, rawTrainerEngine
+from src.algorithms.retrieval_trainer import TrainerEngine
+from src.algorithms.vqa_meta import VQAMetaData
+from src.algorithms.vqa_trainer import VQAEngine, vqa_validation
 from src.utils.config import parse_config
-from src.utils.load_datasets import prepare_coco_dataloaders
+from src.utils.load_datasets import prepare_coco_dataloaders, vqa2_dataloader
 from src.utils.logger import PythonLogger
+from src.utils.util import print_model_tree
 
 try:
     from apex import amp
@@ -37,7 +41,7 @@ is_test = False
 
 
 class MMFL(object):
-    def __init__(self, args, wandb=None):
+    def __init__(self, args, wandb:wandb):
         self.args = args
         self.wandb = wandb
 
@@ -46,6 +50,7 @@ class MMFL(object):
         self.txt_local_trainers = None
         self.mm_local_trainers = None
         self.engine = None
+        self.vqa_engine = None
         self.best_score = 0
         self.cur_epoch = 0
 
@@ -54,8 +59,11 @@ class MMFL(object):
 
         # coco global dataloaders
         self.dataloaders_global = None
+        self.vqa_dataloader = None
+        self.vqa_meta = None
         # universal test dataloader
         self.test_loader = None
+        self.vqa_test_loader = None
 
         self.config = None
         self.set_config()
@@ -87,22 +95,50 @@ class MMFL(object):
             self.config.model.not_bert = False
             self.config.model.cnn_type = 'resnet101'
 
-    def load_dataset(self, args):
+    def load_dataset(self, args, is_vqa=False):
         dataset_root = os.environ['HOME'] + '/data/mmdata/MSCOCO/2014'
-        vocab_path = './src/datasets/vocabs/coco_vocab.pkl'
-        self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, vocab_path)
+        vocab_path = './src/custom_datasets/vocabs/coco_vocab.pkl'
+        self.dataloaders_global, self.vocab = prepare_coco_dataloaders(self.config.dataloader, dataset_root, args.pub_data_num, args.max_size, vocab_path)
 
         self.engine = TrainerEngine()
         self.engine.set_logger(self.logger)
+        
+        if is_vqa:
+            self.vqa_engine = VQAEngine(args,self.engine, self.wandb)
+            self.config.vqa_dropout = self.args.vqa_dropout
 
         self.config.optimizer.learning_rate = self.args.server_lr
 
         self._dataloaders = self.dataloaders_global.copy()
         self.evaluator = COCOEvaluator(eval_method='matmul',
-                                       verbose=False,
+                                       verbose=True,
                                        eval_device='cuda',
                                        n_crossfolds=5)
-        self.engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local)
+        if is_vqa:
+            vqa_dataset = datasets.load_dataset("HuggingFaceM4/VQAv2", split="train")
+            meta = VQAMetaData()
+            meta.build_or_load_categories_top()
+            self.vqa_meta = meta
+            self.vqa_dataloader = vqa2_dataloader(vqa_dataset, train=True, filter_unknown=args.vqa_filter_unknown, meta=meta)
+            test_dataset = datasets.load_dataset("HuggingFaceM4/VQAv2", split="validation")
+            self.vqa_test_loader = vqa2_dataloader(test_dataset, filter_unknown=args.vqa_filter_unknown, meta=meta)
+            self.vqa_engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local, meta)
+            #print_model_tree(self.vqa_engine.fusion_model)
+            if args.pretrained_model.endswith('_vqa.pt'):
+                print(f"Loading pretrained model as VQAEngine {args.pretrained_model}")
+                checkpoint = torch.load(args.pretrained_model)
+                self.vqa_engine.fusion_model.load_state_dict(checkpoint['vqa'])
+                self.best_score = getattr(checkpoint, 'score', self.best_score)
+        else:
+            self.engine.create(self.config, self.vocab.word2idx, self.evaluator, self.args.mlp_local)
+        if args.pretrained_model.endswith('_net.pt'):
+            print(f"Loading pretrained model as TrainerEngine {args.pretrained_model}")
+            checkpoint = torch.load(args.pretrained_model)
+            self.engine.model.load_state_dict(checkpoint['net'])
+            if not is_vqa:
+                self.best_score = getattr(checkpoint, 'score', self.best_score)
+
+        #print_model_tree(self.engine.model)
 
         self.train_eval_dataloader = self._dataloaders.pop(
             'train_subset_eval' + f'_{self.args.pub_data_num}') if self._dataloaders is not None else None
@@ -111,13 +147,21 @@ class MMFL(object):
         torch.backends.cudnn.enabled = True
         if self.config.train.get('use_fp16'):
             self.engine.logger.log('Train with half precision')
-            self.engine.to_half()
+            if is_vqa:
+                self.vqa_engine.to_half()
+            else:
+                self.engine.to_half()
+            
 
     def create_model(self, args):
         self.logger.log('start creating model and partition datasets')
         self.device = torch.device("cuda:%d" % args.device)
 
         os.makedirs(os.environ['HOME'] + f'/data/yClient', exist_ok=True)
+        
+        alpha = args.alpha # was hard-coded to 0.1
+        batch_size = args.batch_size # was hard-coded to 512
+        max_size = args.max_size # introduced by xiegeo
 
         # Create Client Models
         self.img_local_trainers, self.txt_local_trainers, self.mm_local_trainers = [], [], []
@@ -125,7 +169,7 @@ class MMFL(object):
         if args.num_img_clients > 0:
             dataset = 'cifar100'
             self.img_trainloaders, test_set = get_FL_trainloader(dataset, os.environ['HOME'] + "/data/cifar100",
-                                                                 args.num_img_clients, "hetero", 0.1, 512)
+                                                                 args.num_img_clients, "hetero", alpha, batch_size, max_size)
             dataset = 'Cifar100'
             dst = os.environ['HOME'] + f'/data/yClient/{dataset}'
             self.img_local_trainers = []
@@ -140,7 +184,7 @@ class MMFL(object):
         if args.num_txt_clients > 0:
             dataset = 'AG_NEWS'
             self.txt_trainloaders, test_set = get_FL_trainloader(dataset, os.environ['HOME'] + "/data",
-                                                                 args.num_txt_clients, "hetero", 0.1, 512)
+                                                                 args.num_txt_clients, "hetero", alpha, batch_size, max_size)
             client_id = 1
             dst = os.environ['HOME'] + f'/data/yClient/{dataset}-{client_id}'
             self.txt_local_trainers = []
@@ -166,11 +210,11 @@ class MMFL(object):
                 self.mm_local_trainers.append(
                     MMClientTrainer(args, config, self.logger, client=client_id, dset_name="flicker30k",
                                     device='cuda',
-                                    vocab_path='./src/datasets/vocabs/coco_vocab.pkl',
+                                    vocab_path='./src/custom_datasets/vocabs/coco_vocab.pkl',
                                     mlp_local=self.args.mlp_local))
                 if is_test and client_id == 0:
                     break
-            print(f"Samples Num: {[len(i.train_loader.dataset) for i in self.mm_local_trainers]}")
+            print(f"MM Clients Samples Num: {[len(i.train_loader.dataset) for i in self.mm_local_trainers]}")
 
         self.total_local_trainers = self.img_local_trainers + self.txt_local_trainers + self.mm_local_trainers
 
@@ -181,21 +225,25 @@ class MMFL(object):
         self.cur_epoch = round_n
 
         self.cur_trainers = self.total_local_trainers
+        
+        self.logger.log(f"Round {round_n + 1}!")
 
-        if not is_test:
+        if not is_test and not self.args.no_retrieval_training:
             # global training
-            self.logger.log(f"Round {round_n + 1}!")
             self.engine.train(
                 tr_loader=self._dataloaders['train_subset' + f'_{self.args.pub_data_num}'])  # global train
-            if len(self.total_local_trainers) != 0:
-                self.cur_trainers = random.sample(self.total_local_trainers, self.args.client_num_per_round)
+        if len(self.total_local_trainers) != 0:
+            self.cur_trainers = random.sample(self.total_local_trainers, self.args.client_num_per_round)
 
         # global representations
-        if self.args.agg_method == "con_w" or self.args.contrast_local_intra or self.args.contrast_local_inter:
+        if len(self.cur_trainers) == 0:
+            print("No clients to train, skipping global representations")
+        elif self.args.agg_method == "con_w" or self.args.contrast_local_intra or self.args.contrast_local_inter:
             img_feature, txt_feature = [], []
             distill_index = []
             for idx, (images, captions, captions_word, caption_lens, _, _, index) in tqdm(
                     enumerate(self.dataloaders_global['train_subset_eval' + f'_{self.args.pub_data_num}']),
+                    desc="Global Representations",
                     total=len(self.dataloaders_global['train_subset_eval' + f'_{self.args.pub_data_num}'])):
                 with torch.no_grad():
                     images = images.to(self.engine.device)  # [bs, 3, 224, 224]
@@ -219,6 +267,8 @@ class MMFL(object):
             self.distill_index = distill_index
             del img_feature, txt_feature
             gc.collect()
+        else:
+            print("No agg_method or contrast, skipping global representations")
 
         # local training and generated representations
         img_vec, img_num = [], []
@@ -254,70 +304,113 @@ class MMFL(object):
             for param_group in optimizer.param_groups:
                 return param_group['lr']
 
+        # assert round_n + 1 == self.cur_epoch, "inconstant round_n vs cur_epoch, added to check that code clean up does not change logic."
+        
         # record after each epoch training
         metadata = self.engine.metadata.copy()
         metadata['cur_epoch'] = round_n + 1
         metadata['lr'] = get_lr(self.engine.optimizer)
-
+        
+        score = 0
+        
         test_scores = self.engine.evaluate({'test': self._dataloaders['test']})
         self.engine.report_scores(step=round_n + 1,
-                                  scores=test_scores,
-                                  metadata=metadata,
-                                  prefix=self.engine.eval_prefix)
+                                scores=test_scores,
+                                metadata=metadata,
+                                prefix=self.engine.eval_prefix)
         rsum = test_scores['test']['n_fold']['i2t']['recall_1'] + test_scores['test']['n_fold']['t2i']['recall_1'] + \
-               test_scores['test']['i2t']['recall_1'] + test_scores['test']['t2i']['recall_1']
+            test_scores['test']['i2t']['recall_1'] + test_scores['test']['t2i']['recall_1']
         self.wandb.log({"Server rsum_r1": rsum}, step=self.cur_epoch)
+        self.wandb.log({"Server rsum": test_scores['test']['rsum']}, step=self.cur_epoch)
         self.wandb.log({"Server n_fold_i2t_r1": test_scores['test']['n_fold']['i2t']['recall_1']}, step=self.cur_epoch)
         self.wandb.log({"Server n_fold_t2i_r1": test_scores['test']['n_fold']['t2i']['recall_1']}, step=self.cur_epoch)
         self.wandb.log({"Server i2t_r1": test_scores['test']['i2t']['recall_1']}, step=self.cur_epoch)
         self.wandb.log({"Server t2i_r1": test_scores['test']['t2i']['recall_1']}, step=self.cur_epoch)
+        score = rsum
+        
+        if self.vqa_engine is not None:
+            test_loader = None
+            if round_n == 0:
+                test_loader = self.vqa_test_loader # only test during training in the first round
+            self.vqa_engine.train_vqa(self.cur_epoch, self.vqa_dataloader, vqa2_test_dataloader=test_loader)
+            test_scores = vqa_validation(10000, self.vqa_engine.fusion_model, self.vqa_meta, self.vqa_test_loader)
+            #test_scores = vqa_validation(100000, self.vqa_engine.fusion_model, self.vqa_meta, self.vqa_test_loader)
+            self.wandb.log(test_scores, step=self.cur_epoch)
+            score = test_scores['accuracy']
 
-        if self.best_score < rsum:
-            best_score = rsum
+        def save_model(type_name, score=score):
+            prefix = f'{self.args.name}_{type_name}_{self.args.feature_dim}'
+            if self.vqa_engine is not None:
+                torch.save({'vqa': self.vqa_engine.fusion_model.state_dict(),
+                            'score':score}, f'{prefix}_vqa.pt')
+            else:
+                torch.save({'net': self.engine.model.state_dict(),
+                            'score':score},  f'{prefix}_net.pt')
+            
+        
+        if self.best_score < score:
+            best_score = score
             metadata['best_score'] = best_score
             metadata['best_epoch'] = round_n + 1
             self.best_metadata, self.best_scores = metadata, test_scores
-
-            torch.save({'net': self.engine.model.state_dict()}, self.args.name + '-best_model.pt')
+            save_model("best")
 
         if round_n == self.args.comm_rounds - 1:
-            torch.save({'net': self.engine.model.state_dict()}, self.args.name + '-last_model.pt')
+            save_model("last")
 
         self.engine.lr_scheduler.step()
+        if self.vqa_engine is not None:
+            self.vqa_engine.vqa_lr_scheduler.step()
 
         del img_vec, txt_vec
         gc.collect()
 
     def distill(self, round_n, img_vec, txt_vec, img_num, txt_num, distill_index):
+        
+        if len(img_vec) == 0 and len(txt_vec) == 0:
+            print("No img_vec and txt_vec to distill (no clients)")
+            return
 
         self.engine.model.train()
 
         if self.config.model.use_img_client or self.config.model.use_txt_client or self.config.model.use_mm_client:
             client_loss_cri = nn.MSELoss()
 
-        def aggregation(i_vec=img_vec, t_vec=txt_vec, i_num=img_num, t_num=txt_num):
+        def aggregation(i_vec=img_vec, t_vec=txt_vec):
             if self.args.agg_method == "con_w":
-                contrastive_w = []
-                for vec in i_vec:  # vec: [50000, n_feature], global_txt_feature: [50000, n_feature]
-                    logits = torch.matmul(vec, self.global_txt_feature.T)  # [50000, 50000]
-                    exp_logits = torch.exp(logits)
-                    log_prob = logits - torch.log(torch.sum(exp_logits, dim=1, keepdim=True))
-                    contrastive_w.append(torch.diagonal(log_prob).reshape(1, -1))
-                contrastive_w = torch.softmax(torch.cat(contrastive_w, dim=0), dim=0)
-                for i in range(len(i_vec)):
-                    i_vec[i] = (i_vec[i] * contrastive_w[i].reshape(-1, 1)).unsqueeze(0)
-                i_vec = torch.sum(torch.cat(i_vec, dim=0), dim=0)  # aggregated image vectors
+                if not i_vec:
+                     self.logger.log("distill.aggregation i_vec is empty")
+                else:
+                    contrastive_w = []
+                    for vec in i_vec:  # vec: [50000, n_feature], global_txt_feature: [50000, n_feature]
+                        logits = torch.matmul(vec, self.global_txt_feature.T)  # [50000, 50000]
+                        exp_logits = torch.exp(logits)
+                        log_prob = logits - torch.log(torch.sum(exp_logits, dim=1, keepdim=True))
+                        contrastive_w.append(torch.diagonal(log_prob).reshape(1, -1))
+                    if not contrastive_w:
+                        self.logger.log("distill.aggregation No tensors were added to contrastive_w for images")
+                    else:
+                        contrastive_w = torch.softmax(torch.cat(contrastive_w, dim=0), dim=0)
+                        for i in range(len(i_vec)):
+                            i_vec[i] = (i_vec[i] * contrastive_w[i].reshape(-1, 1)).unsqueeze(0)
+                    i_vec = torch.sum(torch.cat(i_vec, dim=0), dim=0)  # aggregated image vectors
 
-                contrastive_w = []
-                for vec in t_vec:  # vec: [50000, n_feature], global_txt_feature: [50000, n_feature]
-                    logits = torch.matmul(vec, self.global_img_feature.T)  # [50000, 50000]
-                    exp_logits = torch.exp(logits)
-                    log_prob = logits - torch.log(torch.sum(exp_logits, dim=1, keepdim=True))
-                    contrastive_w.append(torch.diagonal(log_prob).reshape(1, -1))
-                contrastive_w = torch.softmax(torch.cat(contrastive_w, dim=0), dim=0)
-                for i in range(len(t_vec)):
-                    t_vec[i] = (t_vec[i] * contrastive_w[i].reshape(-1, 1)).unsqueeze(0)
-                t_vec = torch.sum(torch.cat(t_vec, dim=0), dim=0)  # aggregated text vectors
+                if not t_vec:
+                     self.logger.log("distill.aggregation t_vec is empty")
+                else:
+                    contrastive_w = []
+                    for vec in t_vec:  # vec: [50000, n_feature], global_txt_feature: [50000, n_feature]
+                        logits = torch.matmul(vec, self.global_img_feature.T)  # [50000, 50000]
+                        exp_logits = torch.exp(logits)
+                        log_prob = logits - torch.log(torch.sum(exp_logits, dim=1, keepdim=True))
+                        contrastive_w.append(torch.diagonal(log_prob).reshape(1, -1))
+                    if not contrastive_w:
+                        self.logger.log("distill.aggregation No tensors were added to contrastive_w for texts")
+                    else:
+                        contrastive_w = torch.softmax(torch.cat(contrastive_w, dim=0), dim=0)
+                        for i in range(len(t_vec)):
+                            t_vec[i] = (t_vec[i] * contrastive_w[i].reshape(-1, 1)).unsqueeze(0)
+                    t_vec = torch.sum(torch.cat(t_vec, dim=0), dim=0)  # aggregated text vectors
             else:
                 raise NotImplementedError
 
@@ -347,17 +440,17 @@ class MMFL(object):
 
                 return client_loss_cri(output, target.type_as(output))
 
-            if self.args.num_img_clients > 0:
+            if self.args.num_img_clients > 0 and len(img_num)> 0:
                 out_img = output['image_features']
                 d_idx = operator.itemgetter(*index)(distill_dict)  # idx of the current batch
                 target_img = self.img_vec[d_idx, :].type_as(out_img)
                 loss += self.args.kd_weight * code_sim(out_img, target_img, self.config)
-            if self.args.num_txt_clients > 0:
+            if self.args.num_txt_clients > 0 and len(txt_num) > 0:
                 out_txt = output['caption_features']
                 d_idx = operator.itemgetter(*index)(distill_dict)  # idx of the current batch
                 target_txt = self.txt_vec[d_idx, :].type_as(out_txt)
                 loss += self.args.kd_weight * code_sim(out_txt, target_txt, self.config)
-            if self.args.num_mm_clients > 0:
+            if self.args.num_mm_clients > 0 and len(img_num) > 0 and len(txt_num) > 0:
                 out_img = output['image_features']
                 d_idx = operator.itemgetter(*index)(distill_dict)  # idx of the current batch
                 target_img = self.img_vec[d_idx, :].type_as(out_img)

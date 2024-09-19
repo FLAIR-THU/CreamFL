@@ -15,16 +15,16 @@ try:
     from src.algorithms.optimizers import get_optimizer, get_lr_scheduler
 
     from src.algorithms.eval_coco import COCOEvaluator
-    from src.datasets._dataloader import prepare_f30k_dataloaders, load_vocab
+    from src.custom_datasets._dataloader import prepare_f30k_dataloaders, load_vocab
 except ImportError:
     from ..criterions import get_criterion
     from ..networks.models import get_model
     from ..algorithms.optimizers import get_optimizer, get_lr_scheduler
 
     from eval_coco import COCOEvaluator
-    from ..datasets._dataloader import prepare_f30k_dataloaders, load_vocab
+    from ..custom_datasets._dataloader import prepare_f30k_dataloaders, load_vocab
 
-from utils.serialize_utils import torch_safe_load
+from ..utils.serialize_utils import torch_safe_load
 
 try:
     from apex import amp
@@ -59,9 +59,9 @@ def parse_config(config_path, cache_dir=None, pretrained_resnet_model_path=None,
     return config
 
 
-class EngineBase(object):
+class EngineBase2(object):
     def __init__(self, args, config, logger, client=-1, dset_name="flicker30k", device='cuda',
-                 vocab_path='./datasets/vocabs/coco_vocab.pkl', mlp_local=False):
+                 vocab_path='./custom_datasets/vocabs/coco_vocab.pkl', mlp_local=False):
         self.dset_name = dset_name
 
         self.args = args
@@ -83,7 +83,7 @@ class EngineBase(object):
 
         self.client = client
 
-        word2idx = self.set_dset(self.dset_name, client, vocab_path)
+        word2idx = self.set_dset(self.dset_name, client, args.num_mm_clients, vocab_path)
 
         self.config = config
         self.word2idx = word2idx
@@ -114,13 +114,13 @@ class EngineBase(object):
         self.local_epochs = args.local_epochs
         self.local_epoch = 0
 
-    def set_dset(self, dset_name, client=-1, vocab_path='./datasets/vocabs/coco_vocab.pkl'):
+    def set_dset(self, dset_name, client=-1, num_users=-1, vocab_path='./custom_datasets/vocabs/coco_vocab.pkl'):
         if dset_name == "flicker30k":
-            dataloaders, vocab = prepare_f30k_dataloaders(self.config.dataloader, '', vocab_path, client=client)
+            dataloaders, vocab = prepare_f30k_dataloaders(self.config.dataloader, '', self.args.max_size, vocab_path, client=client, num_users=num_users)
             self.train_loader = dataloaders['train']
             self.val_loader = dataloaders['te']
         elif dset_name == "coco":
-            dataloaders, vocab = prepare_coco_dataloaders(self.config.dataloader, os.environ['HOME'] + '/data/mmdata/MSCOCO/2014', vocab_path, client=client)
+            dataloaders, vocab = prepare_coco_dataloaders(self.config.dataloader, os.environ['HOME'] + '/data/mmdata/MSCOCO/2014', self.args.pub_data_num, self.args.max_size, vocab_path, client=client, num_users=num_users)
             self.train_loader = dataloaders['train_client']
             self.val_loader = dataloaders['test']
         else:
