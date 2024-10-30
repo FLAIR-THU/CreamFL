@@ -14,6 +14,7 @@ from nltk.tokenize import word_tokenize
 from torch.utils.data import DataLoader
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import build_vocab_from_iterator
+import torchtext.datasets
 from torchvision import transforms
 from tqdm import tqdm
 
